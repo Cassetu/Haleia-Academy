@@ -73,12 +73,17 @@ navToolsBtn.addEventListener("click", e => {
 });
 
 window.firebaseAuth.onAuthStateChanged(async user => {
-    if (!user) return;
-    currentUser = user;
-    await loadUserData();
-    const initial = (user.displayName || user.email || "N")[0].toUpperCase();
-    if (userAvatarBtn) userAvatarBtn.textContent = initial;
-
+    if (user) {
+        currentUser = user;
+        await loadUserData
+        const initial = (user.displayName || user.email || "N")[0].toUpperCase();
+        if (userAvatarBtn) userAvatarBtn.textContent = initial;
+    } else {
+        currentUser = null;
+        ud = makeBlankUd();
+        ud.onboarded = true;
+        if (userAvatarBtn) userAvatarBtn.textContent = "G"
+    }
     await loadCatalog();
     await routeFromURL();
 });
@@ -239,17 +244,26 @@ function startOnboarding() {
     renderStep();
 }
 
+function showAppForGuest() {
+    document.getElementById("view-landing").style.display = "none";
+    document.getElementById("view-public-courses").style.display = "none";
+    document.getElementById("view-auth").style.display = "none";
+    document.getElementById("app-view").style.display = "flex";
+}
+
 async function routeFromURL() {
     const params = new URLSearchParams(window.location.search);
     const view = params.get("view");
     const id = params.get("id");
     const tab = params.get("tab");
     const parentId = params.get("parentId");
+    const guestApp = ["explorer","syllabus","curriculum-home", "hub"].includes(view);
 
-    if (!currentUser) {
+    if (!currentUser && !guestApp) {
         document.getElementById("view-landing").style.display = "none";
         document.getElementById("view-public-courses").style.display = "none";
         document.getElementById("view-auth").style.display = "none";
+        document.getElementById("app-view").style.display = "none";
 
         if (view === "courses") {
             document.getElementById("view-public-courses").style.display = "block";
@@ -263,7 +277,7 @@ async function routeFromURL() {
         }
         return;
     }
-
+    if(!currentUser) showAppForGuest();
     if (view === "hub") {
         navHub.click();
         if (tab) openHub(tab);
@@ -287,11 +301,16 @@ function currentWeekId() {
 }
 
 async function recordWeeklyActivity() {
+    if (!currentUser) return;
     const week = currentWeekId();
     if (ud.lastActiveWeek === week) return;
     ud.lastActiveWeek = week;
     await saveField("lastActiveWeek", week);
     await window.setDoc(window.doc(window.db, "stats", `week-${week}`), { count: window.increment(1)}, {merge:true});
+}
+
+function makeBlankUd() {
+    return { enrolled: [], scores: {}, analytics: {}, survivalScores: {}, projectProgress: {}, mastery: {}, practiceSettings: {}, onboarded: true, pacedMode: { active: false }, pacedProgress: {} }
 }
 
 async function loadUserData() {
@@ -310,7 +329,7 @@ async function loadUserData() {
         ud.pacedMode = ud.pacedMode || { active: false };
         ud.pacedProgress = ud.pacedProgress || {};
     } else {
-        ud = { enrolled: [], scores: {}, analytics: {}, survivalScores: {}, projectProgress: {}, mastery: {}, practiceSettings: {}, onboarded: false, pacedMode: { active: false }, pacedProgress: {} };
+        ud = makeBlankUd();
         await window.setDoc(ref, ud);
         await window.setDoc(window.doc(window.db, "stats", "global"), { userCount: window.increment(1) }, { merge: true });
     }
@@ -319,6 +338,7 @@ async function loadUserData() {
 }
 
 async function saveField(field, value) {
+    if(!currentUser) return;
     await window.setDoc(
         window.doc(window.db, "users", currentUser.uid),
         { [field]: value },
@@ -497,6 +517,7 @@ wipeConfirmInput?.addEventListener("input", e => {
 });
 
 execWipeBtn?.addEventListener("click", async () => {
+    if (!currentUser) return;
     const blank = { enrolled: [], scores: {}, analytics: {}, survivalScores: {}, projectProgress: {}, mastery: {}, practiceSettings: {}, onboarded: true, pacedMode: { active: false }, pacedProgress: {} };
     await window.setDoc(window.doc(window.db, "users", currentUser.uid), blank);
     ud = blank;
@@ -2140,13 +2161,13 @@ document.addEventListener("keydown", e => {
                 <span class="public-card-meta">${lessonsNote} &bull; ${entry.category}</span>
                 <p>${entry.description}</p>
                 <div class="public-card-footer">
-                    <button class="public-signin-trigger public-signin-btn">Sign in to enroll</button>
+                    <button class="public-signin-trigger public-signin-btn">Try it</button>
                 </div>
             `;
 
             card.querySelector(".public-signin-trigger").addEventListener("click", () => {
-                viewPublic.style.display = "none";
-                viewAuth.style.display   = "block";
+                history.pushState({}, "","?view=curriculum-home&id=" + entry.id);
+                routeFromURL();
             });
 
             pubGrid.appendChild(card);
@@ -2196,11 +2217,6 @@ document.addEventListener("keydown", e => {
             viewPublic.style.display   = "none";
             viewAuth.style.display     = "none";
             appView.style.display      = "flex";
-        } else {
-            viewLanding.style.display  = "flex";
-            viewPublic.style.display   = "none";
-            viewAuth.style.display     = "none";
-            appView.style.display      = "none";
         }
     });
 })();
