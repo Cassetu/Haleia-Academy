@@ -1,69 +1,16 @@
 import { parseCode, shuffleArray } from "./utils/parse.js";
 import { renderProject } from "./renderers/project.js";
 import { createDialogueBox } from "./utils/dialogueBox.js";
-
-let currentUser = null;
-let ud = { enrolled: [], scores: {}, analytics: {}, survivalScores: {}, projectProgress: {}, mastery: {}, practiceSettings: {} };
-let catalogData = [];
-let activeCD = null;
-let activeBlockAnswers = {};
-let activeLessonData = null;
-let activeBundleCourseId = null;
-let activeCurriculumEntry = null;
-let activeCourseRef = null;
-let activeSection;
-let activeLessonStage;
-let lessonComplete = false;
-let lessonScrollArea;
-let lessonBar;
-let activeSteps = [];
-let activeStepIndex = 0;
-let stepResults = [];
-let lessonSquares;
-
-const $ = id => document.getElementById(id);
-
-const viewExplorer  = $("view-explorer");
-const viewSyllabus  = $("view-syllabus");
-const viewLesson    = $("view-lesson");
-const viewSettings  = $("view-settings");
-const viewHub       = $("view-hub");
-const catalogGrid   = $("catalog-grid");
-
-const navExplorer      = $("nav-explorer");
-const navActiveBtn     = $("nav-active-btn");
-const activeDropdown   = $("active-dropdown");
-const activeDropItems  = $("active-dropdown-items");
-const activeCountBadge = $("active-count-badge");
-const userAvatarBtn    = $("user-avatar-btn");
-const userDropdown     = $("user-dropdown");
-const navHub           = $("nav-hub");
-const navSettings      = $("nav-settings");
-const navSignout       = $("nav-signout");
-
-const authGoogleBtn    = $("auth-google-btn");
-const authMagicBtn     = $("auth-magic-btn");
-const authEmailInput   = $("auth-email-input");
-const authStatus       = $("auth-status");
-const searchBar        = $("search-bar");
-const reqWipeBtn       = $("request-wipe-btn");
-const wipeAuthBlock    = $("wipe-auth-block");
-const wipeConfirmInput = $("wipe-confirm-input");
-const execWipeBtn      = $("execute-wipe-btn");
+import { state } from "./state.js";
+import { $, viewExplorer, viewSyllabus, viewLesson, viewSettings, viewHub, catalogGrid,
+        navExplorer, navActiveBtn, activeDropdown, activeDropItems, activeCountBadge,
+        userAvatarBtn, userDropdown, navHub, navSettings, navSignout, navSignin,
+        authGoogleBtn, authMagicBtn, authEmailInput, authStatus, searchBar,
+        reqWipeBtn, wipeAuthBlock, wipeConfirmInput, execWipeBtn, navToolsBtn, toolsDropdown } from "./dom.js";
+import { pickRNatureImage, showError, showConfirmDialog } from "./ui.js";
 
 const BINARY_TYPES = ["challenge", "code_fix", "godot_scene", "spot_bug", "project", "cooking_sim"];
 const isBinaryLesson = l => BINARY_TYPES.includes(l.type) || l.type === "document";
-const NATURE_IMAGES = [
-    "adam-kool.jpg", "anton-lecock.jpg", "cassie-boca.jpg", "daniel-jacob.jpg",
-    "derek-thomson.jpg", "erol-ahmed.jpg", "fernando-strabuli.jpg", "hero-mountains.jpg",
-    "matthew-smith.jpg", "nils-lindner.jpg", "raul-ling.jpg", "sonaal-bangera.jpg",
-    "sophia-simoes.jpg", "weronika.jpg", "robynne-o.jpg", "rafael-peier.jpg", "maria-larsen.jpg",
-    "peter-robbins.jpg", "peter-robbins.jpg", "daphne-fecheyr.jpg", "nils-leonhardt.jpg", "nata-ruta.jpg",
-    "bob-brewer.jpg", "lisha-riabinina.jpg", "vitus-bever.jpg", "benjamin-lecomte.jpg", "marco-murakami.jpg",
-    "maksim-shutov.jpg", "bill-eccles.jpg", "michael-rodock.jpg", "konstantin-dyadyun.jpg", "hidde-joustra.jpg"
-];
-const navToolsBtn = document.getElementById("nav-tools-btn");
-const toolsDropdown = document.getElementById("tools-dropdown");
 
 navToolsBtn.addEventListener("click", e => {
     e.stopPropagation();
@@ -73,26 +20,38 @@ navToolsBtn.addEventListener("click", e => {
 });
 
 window.firebaseAuth.onAuthStateChanged(async user => {
-    if (!user) return;
-    currentUser = user;
-    await loadUserData();
-    const initial = (user.displayName || user.email || "N")[0].toUpperCase();
-    if (userAvatarBtn) userAvatarBtn.textContent = initial;
-
+    if (user) {
+        state.currentUser = user;
+        await loadUserData
+        const initial = (user.displayName || user.email || "N")[0].toUpperCase();
+        if (userAvatarBtn) userAvatarBtn.textContent = initial;
+        if (navSignin) navSignin.style.display = "none";
+    } else {
+        state.currentUser = null;
+        state.ud = makeBlankUd();
+        state.ud.onboarded = true;
+        if (userAvatarBtn) userAvatarBtn.textContent = "G"
+        if (navSignin) navSignin.style.display = "";
+    }
     await loadCatalog();
     await routeFromURL();
 });
 
 window.addEventListener("popstate", routeFromURL);
+document.addEventListener("click", e => {
+    if (!e.target.closest(".landing-signin-trigger")) return;
+    e.preventDefault();
+    history.pushState({}, "", "?view=signin");
+    routeFromURL();
+});
 
 const privacyBackdrop = $("privacy-confirm-backdrop");
 const privacyCheckbox = $("privacy-confirm-checkbox");
 const privacyContinueBtn = $("privacy-confirm-continue");
 const privacyCancelBtn = $("privacy-confirm-cancel");
-let pendingAuthAction = null;
 
 function openPrivacyConfirm(action) {
-    pendingAuthAction = action;
+    state.pendingAuthAction = action;
     privacyCheckbox.checked = false;
     privacyContinueBtn.disabled = true;
     privacyBackdrop.classList.add("open");
@@ -100,7 +59,7 @@ function openPrivacyConfirm(action) {
 
 function closePrivacyConfirm() {
     privacyBackdrop.classList.remove("open");
-    pendingAuthAction = null;
+    state.pendingAuthAction = null;
 }
 
 privacyCheckbox.addEventListener("change", () => {
@@ -114,7 +73,7 @@ privacyBackdrop.addEventListener("click", e => {
 });
 
 privacyContinueBtn.addEventListener("click", () => {
-    const action = pendingAuthAction;
+    const action = state.pendingAuthAction;
     closePrivacyConfirm();
     if (action) action();
 });
@@ -151,11 +110,6 @@ function setAuthStatus(msg, color) {
     authStatus.innerText = msg;
     authStatus.style.color = color;
 }
-function pickRNatureImage() {
-    const filename = NATURE_IMAGES[Math.floor(Math.random() * NATURE_IMAGES.length)];
-    const name = filename.replace(".jpg", "").split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
-    return { path: `/assets/img/nature/${filename}`, credit: name };
-}
 function startOnboarding() {
     if (document.getElementById("onboardingOverlay")) {
         document.getElementById("onboardingOverlay").remove();
@@ -184,7 +138,7 @@ function startOnboarding() {
             closeAllDropdowns();
             const activeOverlay = document.getElementById("onboardingOverlay");
             if (activeOverlay) activeOverlay.remove();
-            ud.onboarded = true;
+            state.ud.onboarded = true;
             saveField("onboarded", true);
             return;
         }
@@ -239,40 +193,47 @@ function startOnboarding() {
     renderStep();
 }
 
+function showTopView(id) {
+    ["view-landing", "view-public-courses","view-auth","app-view"].forEach(v => {
+        document.getElementById(v).style.display = "none";
+    });
+    document.getElementById(id).style.display =
+        (id === "view-landing" || id === "app-view") ? "flex" : "block";
+}
+
 async function routeFromURL() {
     const params = new URLSearchParams(window.location.search);
     const view = params.get("view");
     const id = params.get("id");
     const tab = params.get("tab");
     const parentId = params.get("parentId");
+    const guestApp = ["explorer","syllabus","curriculum-home", "hub"].includes(view);
 
-    if (!currentUser) {
-        document.getElementById("view-landing").style.display = "none";
-        document.getElementById("view-public-courses").style.display = "none";
-        document.getElementById("view-auth").style.display = "none";
-
+    if (!state.currentUser && !guestApp) {
         if (view === "courses") {
-            document.getElementById("view-public-courses").style.display = "block";
-            if (typeof loadCatalog !== "undefined" && catalogData.length === 0) {
+            showTopView("view-public-courses");
+            if (typeof loadCatalog !== "undefined" && state.catalogData.length === 0) {
                 await loadCatalog();
             }
         } else if (view === "signin") {
+            showTopView("view-auth");
             document.getElementById("view-auth").style.display = "block";
         } else {
+            showTopView("view-landing");
             document.getElementById("view-landing").style.display = "flex";
         }
         return;
     }
-
+    if (!state.currentUser) showTopView("app-view");
     if (view === "hub") {
         navHub.click();
         if (tab) openHub(tab);
     } else if (view === "curriculum-home") {
-        const entry = catalogData.find(c => c.id === id);
+        const entry = state.catalogData.find(c => c.id === id);
         if (entry) openCurriculumHome(entry);
         else navExplorer.click();
     } else if (view === "syllabus") {
-        const parent = catalogData.find(c => c.id === parentId);
+        const parent = state.catalogData.find(c => c.id === parentId);
         if (parent) openSyllabus(id, null, parent);
         else navExplorer.click();
     } else {
@@ -287,40 +248,46 @@ function currentWeekId() {
 }
 
 async function recordWeeklyActivity() {
+    if (!state.currentUser) return;
     const week = currentWeekId();
-    if (ud.lastActiveWeek === week) return;
-    ud.lastActiveWeek = week;
+    if (state.ud.lastActiveWeek === week) return;
+    state.ud.lastActiveWeek = week;
     await saveField("lastActiveWeek", week);
     await window.setDoc(window.doc(window.db, "stats", `week-${week}`), { count: window.increment(1)}, {merge:true});
 }
 
+function makeBlankUd() {
+    return { enrolled: [], scores: {}, analytics: {}, survivalScores: {}, projectProgress: {}, mastery: {}, practiceSettings: {}, onboarded: true, pacedMode: { active: false }, pacedProgress: {} }
+}
+
 async function loadUserData() {
-    const ref = window.doc(window.db, "users", currentUser.uid);
+    const ref = window.doc(window.db, "users", state.currentUser.uid);
     const snap = await window.getDoc(ref);
     if (snap.exists()) {
-        ud = snap.data();
-        ud.enrolled         = ud.enrolled         || [];
-        ud.scores           = ud.scores           || {};
-        ud.analytics        = ud.analytics        || {};
-        ud.survivalScores   = ud.survivalScores   || {};
-        ud.projectProgress  = ud.projectProgress  || {};
-        ud.mastery          = ud.mastery          || {};
-        ud.practiceSettings = ud.practiceSettings || {};
-        ud.onboarded = ud.onboarded || false;
-        ud.pacedMode = ud.pacedMode || { active: false };
-        ud.pacedProgress = ud.pacedProgress || {};
+        state.ud = snap.data();
+        state.ud.enrolled         = state.ud.enrolled         || [];
+        state.ud.scores           = state.ud.scores           || {};
+        state.ud.analytics        = state.ud.analytics        || {};
+        state.ud.survivalScores   = state.ud.survivalScores   || {};
+        state.ud.projectProgress  = state.ud.projectProgress  || {};
+        state.ud.mastery          = state.ud.mastery          || {};
+        state.ud.practiceSettings = state.ud.practiceSettings || {};
+        state.ud.onboarded = state.ud.onboarded || false;
+        state.ud.pacedMode = state.ud.pacedMode || { active: false };
+        state.ud.pacedProgress = state.ud.pacedProgress || {};
     } else {
-        ud = { enrolled: [], scores: {}, analytics: {}, survivalScores: {}, projectProgress: {}, mastery: {}, practiceSettings: {}, onboarded: false, pacedMode: { active: false }, pacedProgress: {} };
-        await window.setDoc(ref, ud);
+        state.ud = makeBlankUd();
+        await window.setDoc(ref, state.ud);
         await window.setDoc(window.doc(window.db, "stats", "global"), { userCount: window.increment(1) }, { merge: true });
     }
     await recordWeeklyActivity();
-    console.log("user data loaded", currentUser.uid);
+    console.log("user data loaded", state.currentUser.uid);
 }
 
 async function saveField(field, value) {
+    if(!state.currentUser) return;
     await window.setDoc(
-        window.doc(window.db, "users", currentUser.uid),
+        window.doc(window.db, "users", state.currentUser.uid),
         { [field]: value },
         { merge: true }
     );
@@ -357,13 +324,13 @@ async function populateActiveDropdown() {
     if (!activeDropItems) return;
     activeDropItems.innerHTML = "";
 
-    if (!ud.enrolled.length) {
+    if (!state.ud.enrolled.length) {
         activeDropItems.innerHTML = `<div class="tb-dd-empty">No active curriculums.<br>Explore to enroll.</div>`;
         return;
     }
 
-    for (const entryId of ud.enrolled) {
-        const entry = catalogData.find(c => c.id === entryId);
+    for (const entryId of state.ud.enrolled) {
+        const entry = state.catalogData.find(c => c.id === entryId);
         if (!entry) continue;
 
         const pct = await getCourseProgress(entry.id);
@@ -434,7 +401,7 @@ window.loadStats = loadStats;
 window.landingAudienceTabs = landingAudienceTabs;
 function updateActiveCountBadge() {
     if (!activeCountBadge) return;
-    const n = ud.enrolled.length;
+    const n = state.ud.enrolled.length;
     activeCountBadge.textContent = n ? `(${n})` : "";
 }
 
@@ -446,7 +413,7 @@ navExplorer?.addEventListener("click", async e => {
     await renderExplorer();
     switchView("view-explorer");
     setActiveNavBtn(navExplorer);
-    if (!ud.onboarded) startOnboarding();
+    if (!state.ud.onboarded) startOnboarding();
 });
 
 navHub?.addEventListener("click", async e => {
@@ -461,23 +428,34 @@ navHub?.addEventListener("click", async e => {
 navSettings?.addEventListener("click", e => {
     e.stopPropagation();
     closeAllDropdowns();
-    if ($("settings-paced-mode")) $("settings-paced-mode").checked = ud.pacedMode.active;
+    if ($("settings-paced-mode")) $("settings-paced-mode").checked = state.ud.pacedMode.active;
     switchView("view-settings");
     setActiveNavBtn(null);
 });
 
 $('settings-paced-mode')?.addEventListener("change", async e => {
-    ud.pacedMode = ud.pacedMode || {};
-    ud.pacedMode.active = e.target.checked;
-    await saveField("pacedMode", ud.pacedMode);
+    state.ud.pacedMode = state.ud.pacedMode || {};
+    state.ud.pacedMode.active = e.target.checked;
+    await saveField("pacedMode", state.ud.pacedMode);
 });
 
 navSignout?.addEventListener("click", e => {
     e.stopPropagation();
     closeAllDropdowns();
-    showConfirmDialog("Sign out of Novara?", () => {
-        window.firebaseAuth.signOut();
+    const msg = state.currentUser
+        ? "Sign out and leave Novara?"
+        : "Leave Novara? Guest Progress won't be saved.";
+    showConfirmDialog(msg, () => {
+        history.pushState({},"",window.location.pathname);
+        if (state.currentUser) window.firebaseAuth.signOut();
+        else routeFromURL();
     });
+});
+navSignin?.addEventListener("click", e =>{
+    e.stopPropagation();
+    closeAllDropdowns();
+    history.pushState({},"","?view=signin");
+    routeFromURL();
 });
 
 function setActiveNavBtn(el) {
@@ -497,9 +475,10 @@ wipeConfirmInput?.addEventListener("input", e => {
 });
 
 execWipeBtn?.addEventListener("click", async () => {
+    if (!state.currentUser) return;
     const blank = { enrolled: [], scores: {}, analytics: {}, survivalScores: {}, projectProgress: {}, mastery: {}, practiceSettings: {}, onboarded: true, pacedMode: { active: false }, pacedProgress: {} };
-    await window.setDoc(window.doc(window.db, "users", currentUser.uid), blank);
-    ud = blank;
+    await window.setDoc(window.doc(window.db, "users", state.currentUser.uid), blank);
+    state.ud = blank;
     wipeConfirmInput.value = "";
     execWipeBtn.disabled = true;
     execWipeBtn.classList.remove("wipe-btn-ready");
@@ -519,9 +498,9 @@ function switchView(id, title) {
 }
 
 async function loadCatalog() {
-    if (catalogData.length) return;
+    if (state.catalogData.length) return;
     const res = await fetch("data/catalog.json");
-    catalogData = await res.json();
+    state.catalogData = await res.json();
 }
 
 async function loadIndex(meta) {
@@ -548,7 +527,7 @@ function show404() {
 }
 
 async function getCourseProgress(entryId) {
-    const entry = catalogData.find(c => c.id === entryId);
+    const entry = state.catalogData.find(c => c.id === entryId);
     if (!entry) return 0;
     let earned = 0, total = 0;
 
@@ -561,10 +540,10 @@ async function getCourseProgress(entryId) {
                 const id = l.id || (l.title || "").replace(/\s+/g, "-").toLowerCase();
                 const max = isBinaryLesson(l) ? 1 : 4;
                 total += max;
-                if (ud.mastery[id]) {
+                if (state.ud.mastery[id]) {
                     earned += max;
                 } else {
-                    earned += Math.min(ud.scores[id] || 0, max);
+                    earned += Math.min(state.ud.scores[id] || 0, max);
                 }
             }));
         });
@@ -574,9 +553,6 @@ async function getCourseProgress(entryId) {
     collect(data);
     return total === 0 ? 0 : Math.round((earned / total) * 100);
 }
-
-let activeCategory = "all";
-let activeDifficulty = "all";
 
 function showCourseDescription(courseRef) {
     const old = document.getElementById("descOverlay");
@@ -655,11 +631,11 @@ function showCourseDetails(entry) {
 
 async function renderExplorer() {
     catalogGrid.innerHTML = "";
-    for (const entry of catalogData) {
-        if (activeCategory !== "all" && entry.category !== activeCategory) continue;
-        if (activeDifficulty !== "all" && entry.difficulty !== activeDifficulty) continue;
+    for (const entry of state.catalogData) {
+        if (state.activeCategory !== "all" && entry.category !== state.activeCategory) continue;
+        if (state.activeDifficulty !== "all" && entry.difficulty !== state.activeDifficulty) continue;
 
-        const enrolled = ud.enrolled.includes(entry.id);
+        const enrolled = state.ud.enrolled.includes(entry.id);
         const card = document.createElement("div");
         card.className = "course-card";
         card.dataset.category = entry.category || "";
@@ -741,12 +717,12 @@ async function renderExplorer() {
 }
 
 async function enrollInCourse(entry) {
-    if (ud.enrolled.length >= 3) {
+    if (state.ud.enrolled.length >= 3) {
         showError("You can only be enrolled in 3 curriculums at once. Please unenroll from an active curriculum to enroll in a new one.");
         return;
     }
-    ud.enrolled.push(entry.id);
-    await saveField("enrolled", ud.enrolled);
+    state.ud.enrolled.push(entry.id);
+    await saveField("enrolled", state.ud.enrolled);
     const data = await loadIndex(entry);
     const lessonPaths = getLessonPaths(data);
 
@@ -770,72 +746,10 @@ function getLessonPaths(data) {
     });
     return paths;
 }
-
-function showError(message) {
-    const existing = $("errorOverlay");
-    if (existing) existing.remove();
-    const errorOverlay = document.createElement("div");
-    const errorBox = document.createElement("div");
-    errorBox.innerText = message;
-    const errorBtn = document.createElement("button");
-    errorBtn.innerText = "OK";
-    errorBtn.className = "danger-btn";
-    errorBox.id = "errorBox";
-
-    errorOverlay.id = "errorOverlay";
-
-    errorBtn.addEventListener("click", () => {
-        errorOverlay.remove();
-    });
-    errorOverlay.appendChild(errorBox);
-    errorBox.appendChild(errorBtn);
-
-    document.body.appendChild(errorOverlay);
-    return;
-}
-
-function showConfirmDialog(message, onConfirm) {
-    const existing = $("errorOverlay");
-    if (existing) existing.remove();
-
-    const errorOverlay = document.createElement("div");
-    const errorBox = document.createElement("div");
-    errorBox.innerText = message;
-
-    const btnContainer = document.createElement("div");
-    btnContainer.className = "dialog-btn-container";
-
-    const errorBtn = document.createElement("button");
-    errorBtn.innerText = "OK";
-    errorBtn.className = "danger-btn";
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.innerText = "Cancel";
-    cancelBtn.className = "blue-btn";
-
-    errorBox.id = "errorBox";
-    errorOverlay.id = "errorOverlay";
-
-    errorBtn.addEventListener("click", () => {
-        errorOverlay.remove();
-        if (onConfirm) onConfirm();
-    });
-
-    cancelBtn.addEventListener("click", () => {
-        errorOverlay.remove();
-    });
-    btnContainer.appendChild(errorBtn);
-    btnContainer.appendChild(cancelBtn);
-
-    errorBox.appendChild(btnContainer);
-    errorOverlay.appendChild(errorBox);
-    document.body.appendChild(errorOverlay);
-}
-
 async function unenrollFromCourse(entry) {
     showConfirmDialog(`Disenroll from ${entry.title}? Scores are preserved.`, async () => {
-        ud.enrolled = ud.enrolled.filter(id => id !== entry.id);
-        await saveField("enrolled", ud.enrolled);
+        state.ud.enrolled = state.ud.enrolled.filter(id => id !== entry.id);
+        await saveField("enrolled", state.ud.enrolled);
         updateActiveCountBadge();
         await renderExplorer();
     });
@@ -854,7 +768,7 @@ function findProjectLesson(data) {
 
 async function openCurriculumHome(entry) {
     history.pushState({}, "", `?view=curriculum-home&id=${entry.id}`);
-    activeCurriculumEntry = entry;
+    state.activeCurriculumEntry = entry;
     switchView("view-syllabus", entry.title);
     setActiveNavBtn(null);
     viewSyllabus.innerHTML = `<div class="view-loading-state">loading...</div>`;
@@ -887,7 +801,7 @@ async function openCurriculumHome(entry) {
                 const id = l.id || l.title.replace(/\s+/g, "-").toLowerCase();
                 const max = isBinaryLesson(l) ? 1 : 4;
                 t2 += max;
-                e2 += Math.min(ud.scores[id] || 0, max);
+                e2 += Math.min(state.ud.scores[id] || 0, max);
             }));
             const cPct = t2 === 0 ? 0 : Math.round((e2 / t2) * 100);
 
@@ -945,8 +859,8 @@ async function openCurriculumHome(entry) {
             <div class="course-home-meta course-home-meta-spaced">Full course exam</div>
         `;
         masterCard.addEventListener("click", async () => {
-            activeCD = data.courses[0];
-            activeCD.id = entry.id;
+            state.activeCD = data.courses[0];
+            state.activeCD.id = entry.id;
             compileMasterTest();
         });
         grid.appendChild(masterCard);
@@ -961,20 +875,20 @@ async function openCurriculumHome(entry) {
 }
 
 async function openSyllabus(courseId, dataArg, parentEntry) {
-    if (parentEntry) activeCurriculumEntry = parentEntry;
+    if (parentEntry) state.activeCurriculumEntry = parentEntry;
     history.pushState({}, "", `?view=syllabus&id=${courseId}&parentId=${parentEntry?.id || ""}`);
     setActiveNavBtn(null);
     viewSyllabus.innerHTML = `<div class="view-loading-state">loading...</div>`;
 
     const data = dataArg || await loadIndex(parentEntry);
     if (!data) return;
-    activeCD = data.courses.find(c => c.id === courseId);
-    if (!activeCD) { show404(); return;}
-    activeCourseRef = activeCD;
-    activeCD.id = courseId;
-    activeBundleCourseId = courseId;
+    state.activeCD = data.courses.find(c => c.id === courseId);
+    if (!state.activeCD) { show404(); return;}
+    state.activeCourseRef = state.activeCD;
+    state.activeCD.id = courseId;
+    state.activeBundleCourseId = courseId;
 
-    switchView("view-syllabus", activeCD.title);
+    switchView("view-syllabus", state.activeCD.title);
 
     const pct = await getCourseProgress(parentEntry?.id || courseId);
     const projectLesson = findProjectLesson(data);
@@ -1004,14 +918,14 @@ async function openSyllabus(courseId, dataArg, parentEntry) {
     const sidebarInfo = document.createElement("div");
     sidebarInfo.className = "syllabus-sidebar-info";
     sidebarInfo.innerHTML = `
-        <div class="syllabus-sidebar-course-title">${activeCD.title}</div>
+        <div class="syllabus-sidebar-course-title">${state.activeCD.title}</div>
         <div class="course-progress-wrapper">
             <div class="course-progress-fill progress-animator" data-target="${pct}%" style="width:0%"></div>
         </div>
         <div class="curriculum-prog-text">${pct}% complete</div>
         <span class="syllabus-desc-link">Course Description</span>
     `;
-    sidebarInfo.querySelector(".syllabus-desc-link").addEventListener("click", () => showCourseDescription(activeCD));
+    sidebarInfo.querySelector(".syllabus-desc-link").addEventListener("click", () => showCourseDescription(state.activeCD));
     sidebar.appendChild(sidebarInfo);
 
     const contentStage = document.createElement("div");
@@ -1019,13 +933,13 @@ async function openSyllabus(courseId, dataArg, parentEntry) {
 
     let firstSectionBtn = null;
 
-    activeCD.sections.forEach((section, index) => {
+    state.activeCD.sections.forEach((section, index) => {
         const lessons = section.lessons.filter(l => l.type !== "project");
         const totalLessons = lessons.length;
         let completed = 0;
         lessons.forEach(l => {
             const id = l.id || (l.title || "").replace(/\s+/g, "-").toLowerCase();
-            if ((ud.scores[id] || 0) > 0) completed++;
+            if ((state.ud.scores[id] || 0) > 0) completed++;
         });
 
         const secBtn = document.createElement("div");
@@ -1038,7 +952,7 @@ async function openSyllabus(courseId, dataArg, parentEntry) {
         secBtn.onclick = () => {
             sidebar.querySelectorAll(".syllabus-section-btn").forEach(b => b.classList.remove("active"));
             secBtn.classList.add("active");
-            renderSectionLessons(section, activeCD, courseId, contentStage);
+            renderSectionLessons(section, state.activeCD, courseId, contentStage);
         };
 
         if (index === 0) firstSectionBtn = secBtn;
@@ -1058,7 +972,7 @@ async function openSyllabus(courseId, dataArg, parentEntry) {
     masterDetailContainer.appendChild(contentStage);
     viewSyllabus.appendChild(masterDetailContainer);
 
-    if (activeCD.sections.length > 0) {
+    if (state.activeCD.sections.length > 0) {
         firstSectionBtn?.click();
     }
 
@@ -1076,7 +990,7 @@ function renderSectionLessons(section, data, courseId, contentStage) {
     let completed = 0;
     lessons.forEach(l => {
         const id = l.id || (l.title || "").replace(/\s+/g, "-").toLowerCase();
-        if ((ud.scores[id] || 0) > 0) completed++;
+        if ((state.ud.scores[id] || 0) > 0) completed++;
     });
 
     const header = document.createElement("div");
@@ -1092,8 +1006,8 @@ function renderSectionLessons(section, data, courseId, contentStage) {
         lesson.id = id;
         lesson.questions?.forEach((q, i) => q.globalId = `${id}-q${i}`);
 
-        const score = ud.scores?.[id] || 0;
-        const mastered = ud.mastery?.[id];
+        const score = state.ud.scores?.[id] || 0;
+        const mastered = state.ud.mastery?.[id];
         const maxScore = isBinaryLesson(lesson) ? 1 : 4;
         const pct = (score / maxScore) * 100;
         let isLocked = false;
@@ -1118,10 +1032,10 @@ function renderSectionLessons(section, data, courseId, contentStage) {
 
         row.onclick = async () => {
             if (isLocked) return;
-            if (!activeCD || activeCD.id !== courseId) {
-                activeCD = data;
-                activeCD.id = courseId;
-                activeBundleCourseId = courseId;
+            if (!state.activeCD || state.activeCD.id !== courseId) {
+                state.activeCD = data;
+                state.activeCD.id = courseId;
+                state.activeBundleCourseId = courseId;
             }
             if (paced.active && paced.absenceDays > 0 && id === paced.nextId) {
                 const reviewQuiz = await generateAbsenceReview(courseId, data, paced.absenceDays);
@@ -1152,14 +1066,14 @@ function renderSectionLessons(section, data, courseId, contentStage) {
             data.sections.forEach(s => s.lessons.forEach(l => {
                 if (l.type === "project") return;
                 const lid = l.id || (l.title || "").replace(/\s+/g, "-").toLowerCase();
-                const done = (ud.scores[lid] > 0) || ud.mastery[lid];
+                const done = (state.ud.scores[lid] > 0) || state.ud.mastery[lid];
                 if (done) completedCount++;
                 if (lid === id && completedCount > 0 && completedCount % 7 === 0) {
                     targetIsCheckpoint = true;
                 }
             }));
 
-            if (paced.active && targetIsCheckpoint && !(ud.scores[id] > 0 || ud.mastery[id])) {
+            if (paced.active && targetIsCheckpoint && !(state.ud.scores[id] > 0 || state.ud.mastery[id])) {
                 const exam = await generateModuleExam(courseId, data);
                 if (exam) {
                     const overlay = document.createElement("div");
@@ -1191,7 +1105,7 @@ function renderSectionLessons(section, data, courseId, contentStage) {
 }
 
 function getCoursePacedState(data, courseId) {
-    if (!ud.pacedMode || ud.pacedMode.active !== true) {
+    if (!state.ud.pacedMode || state.ud.pacedMode.active !== true) {
         return { active: false };
     }
     let nextId = null;
@@ -1199,14 +1113,14 @@ function getCoursePacedState(data, courseId) {
     data.sections.forEach(s => s.lessons.forEach(l => {
         if (l.type === "project") return;
         const id = l.id || (l.title || "").replace(/\s+/g, "-").toLowerCase();
-        if (!found && !(ud.scores[id] > 0) && !ud.mastery[id]) {
+        if (!found && !(state.ud.scores[id] > 0) && !state.ud.mastery[id]) {
             nextId = id;
             found = true;
         }
     }));
 
     const today = new Date().toLocaleDateString("en-CA");
-    const prog = ud.pacedProgress[courseId] || {};
+    const prog = state.ud.pacedProgress[courseId] || {};
 
 
     let absenceDays = 0;
@@ -1226,7 +1140,7 @@ function getCoursePacedState(data, courseId) {
 
 async function generateAbsenceReview(courseId, data, absenceDays) {
     const allQ = await collectQuestions(data, { mcq: true, fill_blank: true, spot_bug: true });
-    const pool = allQ.filter(q => ud.scores[q.sourceLessonId] > 0 || ud.mastery[q.sourceLessonId]);
+    const pool = allQ.filter(q => state.ud.scores[q.sourceLessonId] > 0 || state.ud.mastery[q.sourceLessonId]);
     if (pool.length === 0) return null;
 
     const qCount = Math.min(9, (absenceDays - 1) * 3);
@@ -1248,74 +1162,74 @@ function openProject(projectLesson, entry) {
     backBtn.onclick = () => {
         backBtn.remove();
         document.body.classList.remove("lesson-active");
-        openSyllabus(activeBundleCourseId, null, activeCurriculumEntry || entry);
+        openSyllabus(state.activeBundleCourseId, null, state.activeCurriculumEntry || entry);
     };
 
-    renderProject(projectLesson, entry.id, ud, saveField, () => {
+    renderProject(projectLesson, entry.id, state.ud, saveField, () => {
         backBtn.remove();
         document.body.classList.remove("lesson-active");
-        openSyllabus(activeBundleCourseId, null, activeCurriculumEntry || entry);
+        openSyllabus(state.activeBundleCourseId, null, state.activeCurriculumEntry || entry);
     });
 }
 
 async function saveLessonResult(finalScore) {
-    if (!activeLessonData.path) { await saveQuizResult(finalScore); return; }
-    const id = activeLessonData.id;
-    const prev = ud.scores[id] || 0;
+    if (!state.activeLessonData.path) { await saveQuizResult(finalScore); return; }
+    const id = state.activeLessonData.id;
+    const prev = state.ud.scores[id] || 0;
     const earned = Math.round((finalScore.correct / finalScore.total) * 4);
     const score = finalScore.correct > 0 ? Math.max(1, earned) : 0;
-    if (score > (ud.scores[id] || 0)) {
-        ud.scores[id] = score;
-        await saveField("scores", ud.scores);
+    if (score > (state.ud.scores[id] || 0)) {
+        state.ud.scores[id] = score;
+        await saveField("scores", state.ud.scores);
     }
-    if (finalScore.correct === finalScore.total && !ud.mastery[id]) {
-        ud.mastery[id] = true;
-        await saveField("mastery", ud.mastery)
+    if (finalScore.correct === finalScore.total && !state.ud.mastery[id]) {
+        state.ud.mastery[id] = true;
+        await saveField("mastery", state.ud.mastery)
     }
     if (prev === 0 && score > 0) await markPacedCompletion();
 }
 
 async function markPacedCompletion() {
-    if (!ud.pacedMode?.active || !activeCD) return;
-    ud.pacedProgress[activeCD.id] = ud.pacedProgress[activeCD.id] || {};
-    ud.pacedProgress[activeCD.id].lastCompletedDate = new Date().toLocaleDateString("en-CA");
-    ud.pacedProgress[activeCD.id].absenceClearedToday = false;
-    await saveField("pacedProgress", ud.pacedProgress);
+    if (!state.ud.pacedMode?.active || !state.activeCD) return;
+    state.ud.pacedProgress[state.activeCD.id] = state.ud.pacedProgress[state.activeCD.id] || {};
+    state.ud.pacedProgress[state.activeCD.id].lastCompletedDate = new Date().toLocaleDateString("en-CA");
+    state.ud.pacedProgress[state.activeCD.id].absenceClearedToday = false;
+    await saveField("pacedProgress", state.ud.pacedProgress);
 }
 
 async function saveQuizResult(finalScore) {
-    const pid = activeCD?.id;
-    if (activeLessonData.isAbsenceReview && pid) {
-        ud.pacedProgress[pid] = ud.pacedProgress[pid] || {};
-        ud.pacedProgress[pid].absenceClearedToday = true;
-        await saveField("pacedProgress", ud.pacedProgress)
+    const pid = state.activeCD?.id;
+    if (state.activeLessonData.isAbsenceReview && pid) {
+        state.ud.pacedProgress[pid] = state.ud.pacedProgress[pid] || {};
+        state.ud.pacedProgress[pid].absenceClearedToday = true;
+        await saveField("pacedProgress", state.ud.pacedProgress)
     }
-    if (activeLessonData.isModuleExam && finalScore.correct / finalScore.total >= 0.8) {
-        activeSteps.forEach(s => {
+    if (state.activeLessonData.isModuleExam && finalScore.correct / finalScore.total >= 0.8) {
+        state.activeSteps.forEach(s => {
             if (!s.sourceLessonId) return;
-            ud.mastery[s.sourceLessonId] = true;
-            ud.scores[s.sourceLessonId] = 4;
+            state.ud.mastery[s.sourceLessonId] = true;
+            state.ud.scores[s.sourceLessonId] = 4;
         });
-        await saveField("mastery", ud.mastery);
-        await saveField("scores", ud.scores);
+        await saveField("mastery", state.ud.mastery);
+        await saveField("scores", state.ud.scores);
         await markPacedCompletion();
     }
 }
 
 async function startLesson(lesson, section) {
     if (lesson.blocks || lesson.steps) {
-        activeLessonData = lesson;
+        state.activeLessonData = lesson;
     } else {
         const res = await fetch(lesson.path);
-        activeLessonData = await res.json();
-        activeLessonData.id = lesson.id;
-        activeLessonData.path = lesson.path;
+        state.activeLessonData = await res.json();
+        state.activeLessonData.id = lesson.id;
+        state.activeLessonData.path = lesson.path;
     }
     console.log(lesson.path);
     //TODO: REMOVE LOG IF UNNEEDED
-    activeSection = section;
-    activeBlockAnswers = {};
-    lessonComplete = false;
+    state.activeSection = section;
+    state.activeBlockAnswers = {};
+    state.lessonComplete = false;
 
     switchView("view-lesson", lesson.title || lesson.name);
     viewLesson.style.display = "flex";
@@ -1338,10 +1252,10 @@ async function startLesson(lesson, section) {
         window.activeTopbarGate = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (lessonComplete) {
+            if (state.lessonComplete) {
                 resetTopBarLayout();
-                if (activeCourseRef) {
-                    openSyllabus(activeBundleCourseId, null, activeCurriculumEntry);
+                if (state.activeCourseRef) {
+                    openSyllabus(state.activeBundleCourseId, null, state.activeCurriculumEntry);
                 } else {
                     switchView("view-explorer");
                 }
@@ -1349,8 +1263,8 @@ async function startLesson(lesson, section) {
                 showConfirmDialog("Return? Progress on this lesson will not be saved.", () => {
                     resetTopBarLayout();
 
-                    if (activeCourseRef) {
-                        openSyllabus(activeBundleCourseId, null, activeCurriculumEntry);
+                    if (state.activeCourseRef) {
+                        openSyllabus(state.activeBundleCourseId, null, state.activeCurriculumEntry);
                     } else {
                         switchView("view-explorer");
                     }
@@ -1362,17 +1276,17 @@ async function startLesson(lesson, section) {
     }
 
     viewLesson.innerHTML = "";
-    activeLessonStage = document.createElement("div");
-    activeLessonStage.className = "syllabus-content-stage lesson-stage-flex";
-    lessonScrollArea = document.createElement("div");
-    lessonScrollArea.className = "lesson-scroll-area"
-    activeLessonStage.appendChild(lessonScrollArea);
-    lessonBar = document.createElement("div");
-    lessonBar.className = "lesson-bar";
-    activeLessonStage.appendChild(lessonBar);
-    lessonSquares = document.createElement("div");
-    lessonSquares.className = "lesson-squares";
-    lessonBar.appendChild(lessonSquares);
+    state.activeLessonStage = document.createElement("div");
+    state.activeLessonStage.className = "syllabus-content-stage lesson-stage-flex";
+    state.lessonScrollArea = document.createElement("div");
+    state.lessonScrollArea.className = "lesson-scroll-area"
+    state.activeLessonStage.appendChild(state.lessonScrollArea);
+    state.lessonBar = document.createElement("div");
+    state.lessonBar.className = "lesson-bar";
+    state.activeLessonStage.appendChild(state.lessonBar);
+    state.lessonSquares = document.createElement("div");
+    state.lessonSquares.className = "lesson-squares";
+    state.lessonBar.appendChild(state.lessonSquares);
     if (section) {
         const sidebarDiv = document.createElement("div");
         sidebarDiv.className = "syllabus-sidebar";
@@ -1384,7 +1298,7 @@ async function startLesson(lesson, section) {
         headerTitle.textContent = section.title;
         header.appendChild(headerTitle);
         sidebarDiv.appendChild(header);
-        activeSection.lessons.forEach(l => {
+        state.activeSection.lessons.forEach(l => {
             const row = document.createElement("div");
             row.className = "syllabus-section-btn";
             if (l.id === lesson.id) row.classList.add("active");
@@ -1400,11 +1314,11 @@ async function startLesson(lesson, section) {
             if (l.id !== lesson.id) {
                 row.onclick = () => {
                     if (isLessonLocked(l)) { showError("This lesson is locked in Paced Mode. Come back later!"); return; }
-                    if (lessonComplete) {
-                        startLesson(l, activeSection);
+                    if (state.lessonComplete) {
+                        startLesson(l, state.activeSection);
                     } else {
                         showConfirmDialog("Leave this lesson? Progress will be lost.", () => {
-                            startLesson(l, activeSection);
+                            startLesson(l, state.activeSection);
                         });
                     }
                 };
@@ -1412,31 +1326,31 @@ async function startLesson(lesson, section) {
             sidebarDiv.appendChild(row);
         });
     }
-    viewLesson.appendChild(activeLessonStage);
-    activeSteps = activeLessonData.steps || [{ blocks: activeLessonData.blocks }];
-    stepResults = activeSteps.map(() => null);
+    viewLesson.appendChild(state.activeLessonStage);
+    state.activeSteps = state.activeLessonData.steps || [{ blocks: state.activeLessonData.blocks }];
+    state.stepResults = state.activeSteps.map(() => null);
     renderStep(0);
 }
 
 function renderStep(index) {
-    activeStepIndex = index;
-    activeBlockAnswers = {};
-    lessonScrollArea.innerHTML = "";
-    lessonBar.querySelector(".lesson-bar-action-btn")?.remove();
-    lessonScrollArea.scrollTop = 0;
+    state.activeStepIndex = index;
+    state.activeBlockAnswers = {};
+    state.lessonScrollArea.innerHTML = "";
+    state.lessonBar.querySelector(".lesson-bar-action-btn")?.remove();
+    state.lessonScrollArea.scrollTop = 0;
     renderStepSquares();
-    renderBlocks(activeSteps[index].blocks);
+    renderBlocks(state.activeSteps[index].blocks);
 }
 
 function renderStepSquares() {
-    lessonSquares.innerHTML = "";
-    activeSteps.forEach((_, i) => {
+    state.lessonSquares.innerHTML = "";
+    state.activeSteps.forEach((_, i) => {
         const sq = document.createElement("div");
         sq.className = "step-square";
-        if (i === activeStepIndex) sq.classList.add("current");
-        if (stepResults[i]?.allCorrect === true) sq.classList.add("right");
-        if (stepResults[i]?.allCorrect === false) sq.classList.add("wrong");
-        lessonSquares.appendChild(sq);
+        if (i === state.activeStepIndex) sq.classList.add("current");
+        if (state.stepResults[i]?.allCorrect === true) sq.classList.add("right");
+        if (state.stepResults[i]?.allCorrect === false) sq.classList.add("wrong");
+        state.lessonSquares.appendChild(sq);
     });
 }
 
@@ -1454,13 +1368,13 @@ function renderBlocks(blocks) {
 function renderHeadingBlock(block) {
     const lessonContent = document.createElement("h" + block.level);
     lessonContent.textContent = block.text;
-    lessonScrollArea.appendChild(lessonContent);
+    state.lessonScrollArea.appendChild(lessonContent);
 }
 
 function renderTextBlock(block) {
     const lessonContent = document.createElement("p");
     lessonContent.textContent = block.content;
-    lessonScrollArea.appendChild(lessonContent);
+    state.lessonScrollArea.appendChild(lessonContent);
 }
 
 function renderImageBlock(block) {
@@ -1475,7 +1389,7 @@ function renderImageBlock(block) {
         caption.textContent = block.caption;
         lessonContent.appendChild(caption);
     }
-    lessonScrollArea.appendChild(lessonContent);
+    state.lessonScrollArea.appendChild(lessonContent);
 }
 
 function renderMultipleChoiceBlock(block) {
@@ -1486,21 +1400,21 @@ function renderMultipleChoiceBlock(block) {
         button.onclick = () => {
             if (block.allowMultiple) {
                 button.classList.toggle("b-option-selected");
-                if (!Array.isArray(activeBlockAnswers[block.id])) activeBlockAnswers[block.id] = [];
-                if (activeBlockAnswers[block.id].includes(option.id)) {
-                    activeBlockAnswers[block.id] = activeBlockAnswers[block.id].filter(id => id !== option.id);
+                if (!Array.isArray(state.activeBlockAnswers[block.id])) state.activeBlockAnswers[block.id] = [];
+                if (state.activeBlockAnswers[block.id].includes(option.id)) {
+                    state.activeBlockAnswers[block.id] = state.activeBlockAnswers[block.id].filter(id => id !== option.id);
                 } else {
-                    activeBlockAnswers[block.id].push(option.id);
+                    state.activeBlockAnswers[block.id].push(option.id);
                 }
             } else {
-                activeBlockAnswers[block.id] = option.id;
+                state.activeBlockAnswers[block.id] = option.id;
                 lessonContent.querySelectorAll("button").forEach(b => b.classList.remove("b-option-selected"));
                 button.classList.add("b-option-selected");
             }
         };
         lessonContent.appendChild(button);
     });
-    lessonScrollArea.appendChild(lessonContent);
+    state.lessonScrollArea.appendChild(lessonContent);
 }
 
 function renderImageLabelBlock(block) {
@@ -1530,8 +1444,8 @@ function renderImageLabelBlock(block) {
         pWrapper.style.top = point.y + "%"
         pWrapper.className = "image-label-pt"
         marker.onchange = () => {
-            activeBlockAnswers[block.id] = activeBlockAnswers[block.id] || {};
-            activeBlockAnswers[block.id][point.id] = marker.value;
+            state.activeBlockAnswers[block.id] = state.activeBlockAnswers[block.id] || {};
+            state.activeBlockAnswers[block.id][point.id] = marker.value;
         };
         pWrapper.appendChild(dot);
         pWrapper.appendChild(marker);
@@ -1543,18 +1457,18 @@ function renderImageLabelBlock(block) {
     colBtn.onclick = () => {
         lessonContent.querySelectorAll(".image-label-pt").forEach(pt => pt.classList.remove("expanded"));
         lessonContent.querySelectorAll(".image-label-select").forEach(sel => sel.value = "");
-        if (activeBlockAnswers[block.id]) activeBlockAnswers[block.id] = {};
+        if (state.activeBlockAnswers[block.id]) state.activeBlockAnswers[block.id] = {};
     }
     lessonContent.appendChild(colBtn);
-    lessonScrollArea.appendChild(lessonContent);
+    state.lessonScrollArea.appendChild(lessonContent);
 }
 
 function renderSubmitBlock(block) {
-    const isLastStep = activeStepIndex === activeSteps.length - 1;
+    const isLastStep = state.activeStepIndex === state.activeSteps.length - 1;
     const lessonContent = document.createElement("button");
     lessonContent.textContent = "Submit"
     lessonContent.className = "lesson-bar-action-btn";
-    lessonBar.appendChild(lessonContent);
+    state.lessonBar.appendChild(lessonContent);
     let stage = "submit";
     let finalScore = { correct: 0, total: 0 };
     lessonContent.onclick = async () => {
@@ -1562,36 +1476,36 @@ function renderSubmitBlock(block) {
             if (isLastStep) {
                 showLessonEndScreen(finalScore, lessonContent);
             } else {
-                renderStep(activeStepIndex + 1);
+                renderStep(state.activeStepIndex + 1);
             }
             return;
         }
         const unanswered = block.targets.some(id => {
             const targetBlock = findBlockById(id);
             if (targetBlock.type === "multipleChoice" && !targetBlock.allowMultiple) {
-                return activeBlockAnswers[id] === undefined;
+                return state.activeBlockAnswers[id] === undefined;
             } else if (targetBlock.type === "multipleChoice" && targetBlock.allowMultiple) {
-                return !activeBlockAnswers[id] || activeBlockAnswers[id].length === 0
+                return !state.activeBlockAnswers[id] || state.activeBlockAnswers[id].length === 0
             } else if (targetBlock.type === "imageLabel") {
-                return targetBlock.points.some(point => activeBlockAnswers[id]?.[point.id] === undefined)
+                return targetBlock.points.some(point => state.activeBlockAnswers[id]?.[point.id] === undefined)
             }
         });
         if (unanswered) {
             const uaFeedback = document.createElement("p");
             uaFeedback.textContent = "Please answer all questions before submitting."
             uaFeedback.className = "block-feedback";
-            lessonScrollArea.appendChild(uaFeedback);
+            state.lessonScrollArea.appendChild(uaFeedback);
             return;
         }
-        lessonScrollArea.querySelectorAll(".block-feedback").forEach(el => el.remove());
-        lessonScrollArea.scrollTo({ top:0, behavior: "smooth"});
+        state.lessonScrollArea.querySelectorAll(".block-feedback").forEach(el => el.remove());
+        state.lessonScrollArea.scrollTo({ top:0, behavior: "smooth"});
         if (block.targets.length === 0) {
-            const firstTime = !ud.scores[activeLessonData.id];
-            ud.scores[activeLessonData.id] = 1
+            const firstTime = !state.ud.scores[state.activeLessonData.id];
+            state.ud.scores[state.activeLessonData.id] = 1
             finalScore = { correct: 1, total: 1 };
-            await saveField("scores", ud.scores)
+            await saveField("scores", state.ud.scores)
             if (firstTime) await markPacedCompletion();
-            stepResults[activeStepIndex] = { allCorrect: true, correct:1, total:1};
+            state.stepResults[state.activeStepIndex] = { allCorrect: true, correct:1, total:1};
             renderStepSquares();
         } else {
             let correctCount = 0;
@@ -1603,15 +1517,15 @@ function renderSubmitBlock(block) {
                 if (targetBlock.type === "multipleChoice") {
                     if (!targetBlock.allowMultiple) {
                         const correct = targetBlock.options.find(o => o.correct);
-                        isCorrect = correct.id === activeBlockAnswers[targetBlock.id];
-                        const selectedOption = targetBlock.options.find(o => o.id === activeBlockAnswers[targetBlock.id])
+                        isCorrect = correct.id === state.activeBlockAnswers[targetBlock.id];
+                        const selectedOption = targetBlock.options.find(o => o.id === state.activeBlockAnswers[targetBlock.id])
                         if (selectedOption.feedback) feedbackText = selectedOption.feedback
                         else feedbackText = isCorrect ? targetBlock.correctFeedback : targetBlock.incorrectFeedback;
                         if (!isCorrect) allCorrect = false;
                         if (isCorrect) correctCount++;
                     } else {
                         const correctIds = targetBlock.options.filter(o => o.correct).map(o => o.id);
-                        const selected = activeBlockAnswers[targetBlock.id] || [];
+                        const selected = state.activeBlockAnswers[targetBlock.id] || [];
                         isCorrect = selected.length === correctIds.length && selected.every(id => correctIds.includes(id));
                         feedbackText = isCorrect ? targetBlock.correctFeedback : targetBlock.incorrectFeedback;
                         if (!isCorrect) allCorrect = false;
@@ -1620,7 +1534,7 @@ function renderSubmitBlock(block) {
                 } else if (targetBlock.type === "imageLabel") {
                     isCorrect = targetBlock.points.every(point => {
                         const correct = point.options.find(o => o.correct);
-                        return correct.id === activeBlockAnswers[targetBlock.id]?.[point.id];
+                        return correct.id === state.activeBlockAnswers[targetBlock.id]?.[point.id];
                     });
                     feedbackText = isCorrect ? targetBlock.correctFeedback : targetBlock.incorrectFeedback;
                     if (!isCorrect) allCorrect = false;
@@ -1629,16 +1543,16 @@ function renderSubmitBlock(block) {
                 const feedback = document.createElement("p");
                 feedback.className = "block-feedback";
                 feedback.textContent = feedbackText;
-                lessonScrollArea.appendChild(feedback);
+                state.lessonScrollArea.appendChild(feedback);
             });
-            stepResults[activeStepIndex] = { allCorrect, correct:correctCount, total: block.targets.length};
+            state.stepResults[state.activeStepIndex] = { allCorrect, correct:correctCount, total: block.targets.length};
             renderStepSquares();
             finalScore = { correct: correctCount, total: block.targets.length };
         }
-        if (isLastStep && activeLessonData.steps) {
+        if (isLastStep && state.activeLessonData.steps) {
             finalScore = {
-                correct: stepResults.filter(r => r?.allCorrect).length,
-                total:activeSteps.length
+                correct: state.stepResults.filter(r => r?.allCorrect).length,
+                total:state.activeSteps.length
             };
         }
         if (isLastStep && block.targets.length > 0) await saveLessonResult(finalScore);
@@ -1648,13 +1562,13 @@ function renderSubmitBlock(block) {
 }
 
 function findBlockById(id) {
-    const block = activeSteps[activeStepIndex].blocks.find(b => b.id === id);
+    const block = state.activeSteps[state.activeStepIndex].blocks.find(b => b.id === id);
     return block;
 }
 
 function showLessonEndScreen(finalScore, actionBtn) {
-    lessonComplete = true;
-    lessonScrollArea.innerHTML = `<div class="view-loading-state">loading...</div>`;
+    state.lessonComplete = true;
+    state.lessonScrollArea.innerHTML = `<div class="view-loading-state">loading...</div>`;
     const nature = pickRNatureImage();
     const img = new Image();
     img.onload = () => renderEndScreenContent(finalScore, nature, actionBtn);
@@ -1663,19 +1577,19 @@ function showLessonEndScreen(finalScore, actionBtn) {
 }
 
 function isLessonLocked(lesson) {
-    if (!activeCD || !activeCD.sections) return false;
-    const paced = getCoursePacedState(activeCD, activeCD.id);
-    console.log("lock check:", lesson.id, "nextId:", paced.nextId, "lockedToday:", paced.lockedToday, "score:", ud.scores[lesson.id]);
+    if (!state.activeCD || !state.activeCD.sections) return false;
+    const paced = getCoursePacedState(state.activeCD, state.activeCD.id);
+    console.log("lock check:", lesson.id, "nextId:", paced.nextId, "lockedToday:", paced.lockedToday, "score:", state.ud.scores[lesson.id]);
     if (!paced.active) return false;
-    const done = ud.scores[lesson.id] > 0 || ud.mastery[lesson.id];
+    const done = state.ud.scores[lesson.id] > 0 || state.ud.mastery[lesson.id];
     return !done && (lesson.id !== paced.nextId || paced.lockedToday);
 }
 
 function renderEndScreenContent(finalScore, nature, actionBtn) {
-    lessonScrollArea.innerHTML = "";
-    lessonScrollArea.style.backgroundImage = `linear-gradient(rgba(10,10,10,0.45), rgba(10,10,10,0.45)), url("${nature.path}")`;
-    lessonScrollArea.style.backgroundSize = "cover";
-    lessonScrollArea.style.backgroundPosition = "center";
+    state.lessonScrollArea.innerHTML = "";
+    state.lessonScrollArea.style.backgroundImage = `linear-gradient(rgba(10,10,10,0.45), rgba(10,10,10,0.45)), url("${nature.path}")`;
+    state.lessonScrollArea.style.backgroundSize = "cover";
+    state.lessonScrollArea.style.backgroundPosition = "center";
 
     const wrapper = document.createElement("div");
     wrapper.className = "lesson-end-wrapper";
@@ -1683,13 +1597,13 @@ function renderEndScreenContent(finalScore, nature, actionBtn) {
         <h2>${finalScore.correct}/${finalScore.total} correct</h2>
         <span class="lesson-end-credit">${nature.credit}</span>
     `
-    lessonScrollArea.appendChild(wrapper);
+    state.lessonScrollArea.appendChild(wrapper);
 
-    if (!activeLessonData.path) {
+    if (!state.activeLessonData.path) {
         actionBtn.textContent = "Done";
         actionBtn.onclick = () => {
             resetTopBarLayout();
-            if (activeCourseRef) openSyllabus(activeBundleCourseId, null, activeCurriculumEntry);
+            if (state.activeCourseRef) openSyllabus(state.activeBundleCourseId, null, state.activeCurriculumEntry);
             else navHub.click();
         };
         return;
@@ -1698,17 +1612,17 @@ function renderEndScreenContent(finalScore, nature, actionBtn) {
 
     if (finalScore.correct !== finalScore.total) {
         actionBtn.onclick = () => {
-            startLesson({ id: activeLessonData.id, path: activeLessonData.path, title: activeLessonData.name }, activeSection);
+            startLesson({ id: state.activeLessonData.id, path: state.activeLessonData.path, title: state.activeLessonData.name }, state.activeSection);
         };
     } else if (finalScore.correct === finalScore.total) {
         actionBtn.onclick = () => {
-            const currentIndex = activeSection.lessons.findIndex(l => l.id === activeLessonData.id);
-            const nextLesson = activeSection.lessons[currentIndex + 1];
+            const currentIndex = state.activeSection.lessons.findIndex(l => l.id === state.activeLessonData.id);
+            const nextLesson = state.activeSection.lessons[currentIndex + 1];
             if (nextLesson && !isLessonLocked(nextLesson)) {
-                startLesson(nextLesson, activeSection);
+                startLesson(nextLesson, state.activeSection);
             } else {
                 resetTopBarLayout();
-                openSyllabus(activeBundleCourseId, null, activeCurriculumEntry);
+                openSyllabus(state.activeBundleCourseId, null, state.activeCurriculumEntry);
             }
         };
     }
@@ -1765,7 +1679,7 @@ async function buildPracticePanel() {
     const content = $("practice-content");
     content.innerHTML = "";
 
-    if (!ud.enrolled.length) {
+    if (!state.ud.enrolled.length) {
         content.innerHTML = `
             <div class="hub-empty-state">
                 <img src="assets/abstract/abstract2.svg" alt="abstract empty" width="25%" height="25%">
@@ -1778,7 +1692,7 @@ async function buildPracticePanel() {
     const banner = document.createElement("div");
     banner.className = "hub-banner";
 
-    if (ud.pacedMode?.active) {
+    if (state.ud.pacedMode?.active) {
         banner.innerHTML = `
             <div class="hub-banner-label">Lessons Renew In</div>
             <div id="paced-countdown" class="hub-banner-timer">Calculating...</div>
@@ -1807,10 +1721,10 @@ async function buildPracticePanel() {
         content.appendChild(banner);
     }
 
-    const globalSettings = ud.practiceSettings["global"] || getDefaultPracticeSettings();
+    const globalSettings = state.ud.practiceSettings["global"] || getDefaultPracticeSettings();
 
     let maxSurvival = 0;
-    Object.values(ud.survivalScores || {}).forEach(score => {
+    Object.values(state.ud.survivalScores || {}).forEach(score => {
         if (score > maxSurvival) maxSurvival = score;
     });
 
@@ -1829,9 +1743,9 @@ async function buildPracticePanel() {
 
     card.querySelectorAll(".ps-check").forEach(cb => {
         cb.addEventListener("change", async () => {
-            ud.practiceSettings["global"] = ud.practiceSettings["global"] || getDefaultPracticeSettings();
-            ud.practiceSettings["global"][cb.dataset.type] = cb.checked;
-            await saveField("practiceSettings", ud.practiceSettings);
+            state.ud.practiceSettings["global"] = state.ud.practiceSettings["global"] || getDefaultPracticeSettings();
+            state.ud.practiceSettings["global"][cb.dataset.type] = cb.checked;
+            await saveField("practiceSettings", state.ud.practiceSettings);
         });
     });
 
@@ -1856,13 +1770,13 @@ async function buildDocsPanel() {
     const content = $("docs-content");
     content.innerHTML = "";
 
-    if (!ud.enrolled.length) {
+    if (!state.ud.enrolled.length) {
         content.innerHTML = "<p class='hub-empty-text' style='margin-top:0;'>no curriculums active.</p>";
         return;
     }
 
-    for (const entryId of ud.enrolled) {
-        const entry = catalogData.find(c => c.id === entryId);
+    for (const entryId of state.ud.enrolled) {
+        const entry = state.catalogData.find(c => c.id === entryId);
         if (!entry) continue;
 
         const group = document.createElement("div");
@@ -1889,8 +1803,8 @@ async function buildDocsPanel() {
                         <span class="docs-lesson-meta">${section.title}</span>
                     `;
                     row.onclick = () => {
-                        activeCD = course;
-                        activeCD.id = course.id;
+                        state.activeCD = course;
+                        state.activeCD.id = course.id;
                         startLesson(Object.assign({}, lesson, { questions: [] }), section);
                     };
                     group.appendChild(row);
@@ -1909,7 +1823,7 @@ async function collectQuestions(data, settings) {
     data.sections.forEach(sec => sec.lessons.forEach(l => {
         if (l.type === "project") return;
         const id = l.id || l.title.replace(/\s+/g, "-").toLowerCase();
-        const isCompleted = (ud.scores[id] > 0) || ud.mastery[id];
+        const isCompleted = (state.ud.scores[id] > 0) || state.ud.mastery[id];
         if (isCompleted) completedLessons.push(l);
     }));
     const fetchedContents = await Promise.all(
@@ -1955,8 +1869,8 @@ function buildQuizSteps(entries) {
 }
 
 async function compileMasterTest() {
-    if (!activeCD) return;
-    const all = await collectQuestions(activeCD, getDefaultPracticeSettings());
+    if (!state.activeCD) return;
+    const all = await collectQuestions(state.activeCD, getDefaultPracticeSettings());
     if (!all.length) {
         showError("No Questions Available!");
         return;
@@ -1971,12 +1885,12 @@ async function compileMasterTest() {
 }
 
 async function compileStandardPractice() {
-    const globalSettings = ud.practiceSettings["global"] || getDefaultPracticeSettings();
+    const globalSettings = state.ud.practiceSettings["global"] || getDefaultPracticeSettings();
     const allEnrolled = [];
-    for (const entryId of ud.enrolled) {
-        const e = catalogData.find(c => c.id === entryId);
+    for (const entryId of state.ud.enrolled) {
+        const e = state.catalogData.find(c => c.id === entryId);
         if (!e) continue;
-        const s = ud.practiceSettings[entryId] || getDefaultPracticeSettings();
+        const s = state.ud.practiceSettings[entryId] || getDefaultPracticeSettings();
         const qs = await getAllQuestionsForEntry(e, s);
         allEnrolled.push(...qs);
     }
@@ -1986,7 +1900,7 @@ async function compileStandardPractice() {
         return;
     }
 
-    const mergedAnalytics = ud.analytics["global"] || {};
+    const mergedAnalytics = state.ud.analytics["global"] || {};
 
     allEnrolled.sort((a, b) => {
         const aS = mergedAnalytics[a.globalId] || { correct: 0, incorrect: 0 };
@@ -2004,19 +1918,19 @@ async function compileStandardPractice() {
 
     const sessionLen = Math.min(allEnrolled.length, Math.max(3, weakCount >= 8 ? 20 : weakCount >= 4 ? 15 : 10));
 
-    activeCD = { id: "global" };
-    activeCourseRef = null;
+    state.activeCD = { id: "global" };
+    state.activeCourseRef = null;
 
     const steps = buildQuizSteps(allEnrolled.slice(0, sessionLen));
     startLesson({ id: "practice-standard", name: "Standard Practice", mode: "sequential", steps: steps });
 }
 
 async function compileSurvivalPractice() {
-    const globalSettings = ud.practiceSettings["global"] || getDefaultPracticeSettings();
+    const globalSettings = state.ud.practiceSettings["global"] || getDefaultPracticeSettings();
     const allEnrolled = [];
 
-    for (const entryId of ud.enrolled) {
-        const e = catalogData.find(c => c.id === entryId);
+    for (const entryId of state.ud.enrolled) {
+        const e = state.catalogData.find(c => c.id === entryId);
         if (!e) continue;
         const qs = await getAllQuestionsForEntry(e, globalSettings);
         allEnrolled.push(...qs);
@@ -2027,8 +1941,8 @@ async function compileSurvivalPractice() {
         return;
     }
 
-    activeCD = { id: "global" };
-    activeCourseRef = null;
+    state.activeCD = { id: "global" };
+    state.activeCourseRef = null;
 
     const steps = buildQuizSteps(allEnrolled);
     startLesson({ id: "practice-survival", name: "Survival", mode: "sequential", steps: steps });
@@ -2047,7 +1961,7 @@ document.querySelectorAll(".filter-btn[data-filter]").forEach(btn => {
     btn.addEventListener("click", () => {
         document.querySelectorAll(".filter-btn[data-filter]").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
-        activeCategory = btn.dataset.filter;
+        state.activeCategory = btn.dataset.filter;
         renderExplorer();
     });
 });
@@ -2056,7 +1970,7 @@ document.querySelectorAll(".diff-btn").forEach(btn => {
     btn.addEventListener("click", () => {
         document.querySelectorAll(".diff-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
-        activeDifficulty = btn.dataset.diff;
+        state.activeDifficulty = btn.dataset.diff;
         renderExplorer();
     });
 });
@@ -2110,19 +2024,9 @@ document.addEventListener("keydown", e => {
         });
     }
 
-    if (btnSignin) {
-        btnSignin.addEventListener("click", e => {
-            e.preventDefault();
-            history.pushState({}, "", "?view=signin");
-            viewLanding.style.display = "none";
-            viewPublic.style.display = "none";
-            viewAuth.style.display    = "block";
-        });
-    }
-
     function renderPublicGrid() {
         pubGrid.innerHTML = "";
-        catalogData.forEach(entry => {
+        state.catalogData.forEach(entry => {
             if (pubCategory !== "all" && entry.category !== pubCategory) return;
             if (pubDifficulty !== "all" && entry.difficulty !== pubDifficulty) return;
             const hay = `${entry.title} ${entry.description || ""} ${entry.category || ""}`.toLowerCase();
@@ -2140,19 +2044,19 @@ document.addEventListener("keydown", e => {
                 <span class="public-card-meta">${lessonsNote} &bull; ${entry.category}</span>
                 <p>${entry.description}</p>
                 <div class="public-card-footer">
-                    <button class="public-signin-trigger public-signin-btn">Sign in to enroll</button>
+                    <button class="public-signin-trigger public-signin-btn">Try it</button>
                 </div>
             `;
 
             card.querySelector(".public-signin-trigger").addEventListener("click", () => {
-                viewPublic.style.display = "none";
-                viewAuth.style.display   = "block";
+                history.pushState({}, "","?view=curriculum-home&id=" + entry.id);
+                routeFromURL();
             });
 
             pubGrid.appendChild(card);
         });
 
-        const courseSchema = catalogData.map(entry => ({
+        const courseSchema = state.catalogData.map(entry => ({
             "@context": "https://schema.org",
             "@type": "Course",
             "name": entry.title,
@@ -2196,11 +2100,6 @@ document.addEventListener("keydown", e => {
             viewPublic.style.display   = "none";
             viewAuth.style.display     = "none";
             appView.style.display      = "flex";
-        } else {
-            viewLanding.style.display  = "flex";
-            viewPublic.style.display   = "none";
-            viewAuth.style.display     = "none";
-            appView.style.display      = "none";
         }
     });
 })();

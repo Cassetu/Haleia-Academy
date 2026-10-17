@@ -146,6 +146,8 @@
 .landing-btn-primary {
     background-color: var(--void);
     color: var(--surface);
+    text-decoration:none;
+    display:inline-block;
 }
 
 .landing-btn-primary:hover { background-color: #1e1e1e; }

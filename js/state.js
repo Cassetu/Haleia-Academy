@@ -1,0 +1,23 @@
+export const state = {
+    currentUser: null,
+    ud: { enrolled: [], scores: {}, analytics: {}, survivalScores: {}, projectProgress: {}, mastery: {}, practiceSettings: {} },
+    catalogData: [],
+    activeCD: null,
+    activeBlockAnswers: {},
+    activeLessonData: null,
+    activeBundleCourseId: null,
+    activeCurriculumEntry: null,
+    activeCourseRef: null,
+    activeSection: null,
+    activeLessonStage: null,
+    lessonComplete: false,
+    lessonScrollArea: null,
+    lessonBar: null,
+    activeSteps: [],
+    activeStepIndex: 0,
+    stepResults: [],
+    lessonSquares: null,
+    pendingAuthAction: null,
+    activeCategory: "all",
+    activeDifficulty: "all"
+};
