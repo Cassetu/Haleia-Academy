@@ -2,51 +2,15 @@ import { parseCode, shuffleArray } from "./utils/parse.js";
 import { renderProject } from "./renderers/project.js";
 import { createDialogueBox } from "./utils/dialogueBox.js";
 import { state } from "./state.js";
-
-const $ = id => document.getElementById(id);
-
-const viewExplorer  = $("view-explorer");
-const viewSyllabus  = $("view-syllabus");
-const viewLesson    = $("view-lesson");
-const viewSettings  = $("view-settings");
-const viewHub       = $("view-hub");
-const catalogGrid   = $("catalog-grid");
-
-const navExplorer      = $("nav-explorer");
-const navActiveBtn     = $("nav-active-btn");
-const activeDropdown   = $("active-dropdown");
-const activeDropItems  = $("active-dropdown-items");
-const activeCountBadge = $("active-count-badge");
-const userAvatarBtn    = $("user-avatar-btn");
-const userDropdown     = $("user-dropdown");
-const navHub           = $("nav-hub");
-const navSettings      = $("nav-settings");
-const navSignout       = $("nav-signout");
-const navSignin        = $("nav-signin");
-
-const authGoogleBtn    = $("auth-google-btn");
-const authMagicBtn     = $("auth-magic-btn");
-const authEmailInput   = $("auth-email-input");
-const authStatus       = $("auth-status");
-const searchBar        = $("search-bar");
-const reqWipeBtn       = $("request-wipe-btn");
-const wipeAuthBlock    = $("wipe-auth-block");
-const wipeConfirmInput = $("wipe-confirm-input");
-const execWipeBtn      = $("execute-wipe-btn");
+import { $, viewExplorer, viewSyllabus, viewLesson, viewSettings, viewHub, catalogGrid,
+        navExplorer, navActiveBtn, activeDropdown, activeDropItems, activeCountBadge,
+        userAvatarBtn, userDropdown, navHub, navSettings, navSignout, navSignin,
+        authGoogleBtn, authMagicBtn, authEmailInput, authStatus, searchBar,
+        reqWipeBtn, wipeAuthBlock, wipeConfirmInput, execWipeBtn, navToolsBtn, toolsDropdown } from "./dom.js";
+import { pickRNatureImage, showError, showConfirmDialog } from "./ui.js";
 
 const BINARY_TYPES = ["challenge", "code_fix", "godot_scene", "spot_bug", "project", "cooking_sim"];
 const isBinaryLesson = l => BINARY_TYPES.includes(l.type) || l.type === "document";
-const NATURE_IMAGES = [
-    "adam-kool.jpg", "anton-lecock.jpg", "cassie-boca.jpg", "daniel-jacob.jpg",
-    "derek-thomson.jpg", "erol-ahmed.jpg", "fernando-strabuli.jpg", "hero-mountains.jpg",
-    "matthew-smith.jpg", "nils-lindner.jpg", "raul-ling.jpg", "sonaal-bangera.jpg",
-    "sophia-simoes.jpg", "weronika.jpg", "robynne-o.jpg", "rafael-peier.jpg", "maria-larsen.jpg",
-    "peter-robbins.jpg", "peter-robbins.jpg", "daphne-fecheyr.jpg", "nils-leonhardt.jpg", "nata-ruta.jpg",
-    "bob-brewer.jpg", "lisha-riabinina.jpg", "vitus-bever.jpg", "benjamin-lecomte.jpg", "marco-murakami.jpg",
-    "maksim-shutov.jpg", "bill-eccles.jpg", "michael-rodock.jpg", "konstantin-dyadyun.jpg", "hidde-joustra.jpg"
-];
-const navToolsBtn = document.getElementById("nav-tools-btn");
-const toolsDropdown = document.getElementById("tools-dropdown");
 
 navToolsBtn.addEventListener("click", e => {
     e.stopPropagation();
@@ -145,11 +109,6 @@ authMagicBtn.addEventListener("click", () => {
 function setAuthStatus(msg, color) {
     authStatus.innerText = msg;
     authStatus.style.color = color;
-}
-function pickRNatureImage() {
-    const filename = NATURE_IMAGES[Math.floor(Math.random() * NATURE_IMAGES.length)];
-    const name = filename.replace(".jpg", "").split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
-    return { path: `/assets/img/nature/${filename}`, credit: name };
 }
 function startOnboarding() {
     if (document.getElementById("onboardingOverlay")) {
@@ -787,68 +746,6 @@ function getLessonPaths(data) {
     });
     return paths;
 }
-
-function showError(message) {
-    const existing = $("errorOverlay");
-    if (existing) existing.remove();
-    const errorOverlay = document.createElement("div");
-    const errorBox = document.createElement("div");
-    errorBox.innerText = message;
-    const errorBtn = document.createElement("button");
-    errorBtn.innerText = "OK";
-    errorBtn.className = "danger-btn";
-    errorBox.id = "errorBox";
-
-    errorOverlay.id = "errorOverlay";
-
-    errorBtn.addEventListener("click", () => {
-        errorOverlay.remove();
-    });
-    errorOverlay.appendChild(errorBox);
-    errorBox.appendChild(errorBtn);
-
-    document.body.appendChild(errorOverlay);
-    return;
-}
-
-function showConfirmDialog(message, onConfirm) {
-    const existing = $("errorOverlay");
-    if (existing) existing.remove();
-
-    const errorOverlay = document.createElement("div");
-    const errorBox = document.createElement("div");
-    errorBox.innerText = message;
-
-    const btnContainer = document.createElement("div");
-    btnContainer.className = "dialog-btn-container";
-
-    const errorBtn = document.createElement("button");
-    errorBtn.innerText = "OK";
-    errorBtn.className = "danger-btn";
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.innerText = "Cancel";
-    cancelBtn.className = "blue-btn";
-
-    errorBox.id = "errorBox";
-    errorOverlay.id = "errorOverlay";
-
-    errorBtn.addEventListener("click", () => {
-        errorOverlay.remove();
-        if (onConfirm) onConfirm();
-    });
-
-    cancelBtn.addEventListener("click", () => {
-        errorOverlay.remove();
-    });
-    btnContainer.appendChild(errorBtn);
-    btnContainer.appendChild(cancelBtn);
-
-    errorBox.appendChild(btnContainer);
-    errorOverlay.appendChild(errorBox);
-    document.body.appendChild(errorOverlay);
-}
-
 async function unenrollFromCourse(entry) {
     showConfirmDialog(`Disenroll from ${entry.title}? Scores are preserved.`, async () => {
         state.ud.enrolled = state.ud.enrolled.filter(id => id !== entry.id);
