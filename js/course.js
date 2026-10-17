@@ -40,6 +40,7 @@ const userDropdown     = $("user-dropdown");
 const navHub           = $("nav-hub");
 const navSettings      = $("nav-settings");
 const navSignout       = $("nav-signout");
+const navSignin        = $("nav-signin");
 
 const authGoogleBtn    = $("auth-google-btn");
 const authMagicBtn     = $("auth-magic-btn");
@@ -78,17 +79,25 @@ window.firebaseAuth.onAuthStateChanged(async user => {
         await loadUserData
         const initial = (user.displayName || user.email || "N")[0].toUpperCase();
         if (userAvatarBtn) userAvatarBtn.textContent = initial;
+        if (navSignin) navSignin.style.display = "none";
     } else {
         currentUser = null;
         ud = makeBlankUd();
         ud.onboarded = true;
         if (userAvatarBtn) userAvatarBtn.textContent = "G"
+        if (navSignin) navSignin.style.display = "";
     }
     await loadCatalog();
     await routeFromURL();
 });
 
 window.addEventListener("popstate", routeFromURL);
+document.addEventListener("click", e => {
+    if (!e.target.closest(".landing-signin-trigger")) return;
+    e.preventDefault();
+    history.pushState({}, "", "?view=signin");
+    routeFromURL();
+});
 
 const privacyBackdrop = $("privacy-confirm-backdrop");
 const privacyCheckbox = $("privacy-confirm-checkbox");
@@ -244,11 +253,12 @@ function startOnboarding() {
     renderStep();
 }
 
-function showAppForGuest() {
-    document.getElementById("view-landing").style.display = "none";
-    document.getElementById("view-public-courses").style.display = "none";
-    document.getElementById("view-auth").style.display = "none";
-    document.getElementById("app-view").style.display = "flex";
+function showTopView(id) {
+    ["view-landing", "view-public-courses","view-auth","app-view"].forEach(v => {
+        document.getElementById(v).style.display = "none";
+    });
+    document.getElementById(id).style.display =
+        (id === "view-landing" || id === "app-view") ? "flex" : "block";
 }
 
 async function routeFromURL() {
@@ -260,24 +270,21 @@ async function routeFromURL() {
     const guestApp = ["explorer","syllabus","curriculum-home", "hub"].includes(view);
 
     if (!currentUser && !guestApp) {
-        document.getElementById("view-landing").style.display = "none";
-        document.getElementById("view-public-courses").style.display = "none";
-        document.getElementById("view-auth").style.display = "none";
-        document.getElementById("app-view").style.display = "none";
-
         if (view === "courses") {
-            document.getElementById("view-public-courses").style.display = "block";
+            showTopView("view-public-courses");
             if (typeof loadCatalog !== "undefined" && catalogData.length === 0) {
                 await loadCatalog();
             }
         } else if (view === "signin") {
+            showTopView("view-auth");
             document.getElementById("view-auth").style.display = "block";
         } else {
+            showTopView("view-landing");
             document.getElementById("view-landing").style.display = "flex";
         }
         return;
     }
-    if(!currentUser) showAppForGuest();
+    if (!currentUser) showTopView("app-view");
     if (view === "hub") {
         navHub.click();
         if (tab) openHub(tab);
@@ -495,9 +502,20 @@ $('settings-paced-mode')?.addEventListener("change", async e => {
 navSignout?.addEventListener("click", e => {
     e.stopPropagation();
     closeAllDropdowns();
-    showConfirmDialog("Sign out of Novara?", () => {
-        window.firebaseAuth.signOut();
+    const msg = currentUser
+        ? "Sign out and leave Novara?"
+        : "Leave Novara? Guest Progress won't be saved.";
+    showConfirmDialog(msg, () => {
+        history.pushState({},"",window.location.pathname);
+        if (currentUser) window.firebaseAuth.signOut();
+        else routeFromURL();
     });
+});
+navSignin?.addEventListener("click", e =>{
+    e.stopPropagation();
+    closeAllDropdowns();
+    history.pushState({},"","?view=signin");
+    routeFromURL();
 });
 
 function setActiveNavBtn(el) {
@@ -2128,16 +2146,6 @@ document.addEventListener("keydown", e => {
             viewPublic.style.display  = "none";
             viewAuth.style.display = "none";
             viewLanding.style.display = "flex";
-        });
-    }
-
-    if (btnSignin) {
-        btnSignin.addEventListener("click", e => {
-            e.preventDefault();
-            history.pushState({}, "", "?view=signin");
-            viewLanding.style.display = "none";
-            viewPublic.style.display = "none";
-            viewAuth.style.display    = "block";
         });
     }
 
