@@ -1,24 +1,5 @@
 const CACHE = "novara-v3";
 
-const STATIC = [
-    "/",
-    "/index.html",
-    "/css/style.css",
-    "/css/about.css",
-    "/css/privacy.css",
-    "/css/landing.css",
-    "/js/app.js",
-    "/js/firebase-config.js",
-    "/js/course.js",
-    "/js/utils/parse.js",
-    "/js/utils/sound.js",
-    "/js/utils/dialogueBox.js",
-    "/js/utils/lineNumbers.js",
-    "/js/renderers/project.js",
-    "/data/catalog.json",
-    "/html/about.html",
-    "/html/privacy.html"
-];
 
 const SKIP_CACHE = [
     "firebaseapp.com",
@@ -27,10 +8,8 @@ const SKIP_CACHE = [
     "firestore.googleapis.com"
 ];
 
-self.addEventListener("install", e => {
-    e.waitUntil(
-        caches.open(CACHE).then(c => c.addAll(STATIC)).then(() => self.skipWaiting())
-    );
+self.addEventListener("install", () => {
+    self.skipWaiting();
 });
 
 self.addEventListener("activate", e => {
@@ -42,26 +21,20 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
-    const url = e.request.url;
-
-    if (SKIP_CACHE.some(s => url.includes(s))) return;
-
-    if (url.includes("/data/") && url.endsWith(".json")) {
-        e.respondWith(
-            caches.open(CACHE).then(async cache => {
-                const cached = await cache.match(e.request);
-                if (cached) return cached;
-                const fresh = await fetch(e.request);
-                cache.put(e.request, fresh.clone());
-                return fresh;
-            })
-        );
-        return;
-    }
-
-    e.respondWith(
-        caches.match(e.request).then(cached => cached || fetch(e.request))
-    );
+   const req = e.request;
+   if (req.method !== "GET" || !req.url.startsWith(self.location.origin)) return;
+   if (SKIP_CACHE.some(s => req.url.includes(s))) return;
+   e.respondWith(
+       fetch(req, { cache: "no-cache" })
+           .then(res => {
+               if (res.ok) {
+                   const copy = res.clone();
+                   caches.open(CACHE).then(c => c.put(req, copy));
+               }
+               return res;
+           })
+           .catch(() => caches.match(req))
+   );
 });
 
 self.addEventListener("message", e => {
