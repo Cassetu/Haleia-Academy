@@ -1,6 +1,6 @@
 import { state } from "./state.js";
 import { saveField } from "./userData.js";
-import { markPacedCompletion, renderStep, renderStepSquares, saveLessonResult, showLessonEndScreen } from "./course.js";
+import { markPacedCompletion, renderStep, renderStepSquares, saveLessonResult, showLessonEndScreen } from "./lesson.js";
 
 export function renderBlocks(blocks) {
     blocks.forEach(block => {
