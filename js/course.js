@@ -9,9 +9,9 @@ import { $, viewExplorer, viewSyllabus, viewLesson, viewSettings, viewHub, catal
         reqWipeBtn, wipeAuthBlock, wipeConfirmInput, execWipeBtn, navToolsBtn, toolsDropdown } from "./dom.js";
 import { pickRNatureImage, showError, showConfirmDialog } from "./ui.js";
 import { loadUserData, saveField, makeBlankUd, currentWeekId } from "./userData.js";
-
-const BINARY_TYPES = ["challenge", "code_fix", "godot_scene", "spot_bug", "project", "cooking_sim"];
-const isBinaryLesson = l => BINARY_TYPES.includes(l.type) || l.type === "document";
+import { BINARY_TYPES, isBinaryLesson } from "./constants.js";
+import { startOnboarding } from "./onboarding.js";
+import { renderBlocks } from "./blocks.js";
 
 navToolsBtn.addEventListener("click", e => {
     e.stopPropagation();
@@ -111,88 +111,6 @@ function setAuthStatus(msg, color) {
     authStatus.innerText = msg;
     authStatus.style.color = color;
 }
-function startOnboarding() {
-    if (document.getElementById("onboardingOverlay")) {
-        document.getElementById("onboardingOverlay").remove();
-    }
-    const onboardingOverlay = document.createElement("div");
-    onboardingOverlay.id = "onboardingOverlay";
-    onboardingOverlay.className = "onboarding-backdrop";
-    document.body.appendChild(onboardingOverlay);
-
-    const steps = [
-        { selector: ".course-card", text: "Welcome to Novara. I'm Bob. Each card here is a full curriculum with lessons, challenges, and simulations." },
-        { selector: ".b-enroll-btn", text: "When you're ready, click 'Enroll' on a card to put it into your active selection.", interaction: true },
-        { selector: "#user-avatar-btn", text: "If you want extra practice, open your profile menu to hit the Hub for survival drills and docs.", openMenu: true, blockClick: true },
-        { selector: "#nav-active-btn", text: "Your active curriculums stay right up here in this menu so you can drop back in anytime.", openActive: true, blockClick: true }
-    ];
-
-    let cur = 0;
-    let lastTarget = null;
-    let lastHighlightEl = null;
-
-    function renderStep() {
-        if (lastHighlightEl) lastHighlightEl.classList.remove("onboarding-highlight");
-        if (lastTarget) lastTarget.style.pointerEvents = "";
-
-        if (cur >= steps.length) {
-            closeAllDropdowns();
-            const activeOverlay = document.getElementById("onboardingOverlay");
-            if (activeOverlay) activeOverlay.remove();
-            state.ud.onboarded = true;
-            saveField("onboarded", true);
-            return;
-        }
-
-        const step = steps[cur];
-        if (step.openMenu && userDropdown) {
-            closeAllDropdowns();
-            userDropdown.classList.add("open");
-        } else if (step.openActive && activeDropdown) {
-            closeAllDropdowns();
-            populateActiveDropdown();
-            activeDropdown.classList.add("open");
-        }
-
-        const target = document.querySelector(step.selector);
-        lastTarget = target;
-        if (!target) { cur++; renderStep(); return; }
-
-        const rect = target.getBoundingClientRect();
-        onboardingOverlay.innerHTML = "";
-
-        const highlightEl = step.openMenu || step.openActive ? target.closest(".tb-dropdown-wrap") || target : target;
-        highlightEl.classList.add("onboarding-highlight");
-        lastHighlightEl = highlightEl;
-
-        target.style.pointerEvents = step.blockClick ? "none" : "auto";
-
-        const dialogueBox = createDialogueBox({
-            name: "Mayor Bob",
-            imageSrc: "assets/img/minibit/advisor_mayor.png",
-            texts: [step.text],
-            onComplete: () => {
-                closeAllDropdowns();
-                cur++;
-                renderStep();
-            }
-        });
-
-        dialogueBox.className = "dialogue-box-fixed";
-        dialogueBox.style.top = Math.min(rect.bottom + 40, window.innerHeight - 200) + "px";
-        dialogueBox.style.left = Math.max(20, Math.min(rect.left, window.innerWidth - 440)) + "px";
-        onboardingOverlay.appendChild(dialogueBox);
-
-        if (step.interaction) {
-            target.addEventListener("click", () => {
-                closeAllDropdowns();
-                cur++;
-                renderStep();
-            }, { once: true });
-        }
-    }
-    renderStep();
-}
 
 function showTopView(id) {
     ["view-landing", "view-public-courses","view-auth","app-view"].forEach(v => {
@@ -242,7 +160,7 @@ async function routeFromURL() {
     }
 }
 
-function closeAllDropdowns() {
+export function closeAllDropdowns() {
     activeDropdown?.classList.remove("open");
     userDropdown?.classList.remove("open");
     toolsDropdown.classList.remove("open");
@@ -269,7 +187,7 @@ document.addEventListener("click", closeAllDropdowns);
 activeDropdown?.addEventListener("click", e => e.stopPropagation());
 userDropdown?.addEventListener("click", e => e.stopPropagation());
 
-async function populateActiveDropdown() {
+export async function populateActiveDropdown() {
     if (!activeDropItems) return;
     activeDropItems.innerHTML = "";
 
@@ -1121,7 +1039,7 @@ function openProject(projectLesson, entry) {
     });
 }
 
-async function saveLessonResult(finalScore) {
+export async function saveLessonResult(finalScore) {
     if (!state.activeLessonData.path) { await saveQuizResult(finalScore); return; }
     const id = state.activeLessonData.id;
     const prev = state.ud.scores[id] || 0;
@@ -1138,7 +1056,7 @@ async function saveLessonResult(finalScore) {
     if (prev === 0 && score > 0) await markPacedCompletion();
 }
 
-async function markPacedCompletion() {
+export async function markPacedCompletion() {
     if (!state.ud.pacedMode?.active || !state.activeCD) return;
     state.ud.pacedProgress[state.activeCD.id] = state.ud.pacedProgress[state.activeCD.id] || {};
     state.ud.pacedProgress[state.activeCD.id].lastCompletedDate = new Date().toLocaleDateString("en-CA");
@@ -1281,7 +1199,7 @@ async function startLesson(lesson, section) {
     renderStep(0);
 }
 
-function renderStep(index) {
+export function renderStep(index) {
     state.activeStepIndex = index;
     state.activeBlockAnswers = {};
     state.lessonScrollArea.innerHTML = "";
@@ -1291,7 +1209,7 @@ function renderStep(index) {
     renderBlocks(state.activeSteps[index].blocks);
 }
 
-function renderStepSquares() {
+export function renderStepSquares() {
     state.lessonSquares.innerHTML = "";
     state.activeSteps.forEach((_, i) => {
         const sq = document.createElement("div");
@@ -1303,219 +1221,7 @@ function renderStepSquares() {
     });
 }
 
-function renderBlocks(blocks) {
-    blocks.forEach(block => {
-       if (block.type == "heading") renderHeadingBlock(block);
-       else if (block.type == "text") renderTextBlock(block);
-       else if (block.type == "image") renderImageBlock(block);
-       else if (block.type == "multipleChoice") renderMultipleChoiceBlock(block);
-       else if (block.type == "imageLabel") renderImageLabelBlock(block);
-       else if (block.type == "submit") renderSubmitBlock(block);
-    });
-}
-
-function renderHeadingBlock(block) {
-    const lessonContent = document.createElement("h" + block.level);
-    lessonContent.textContent = block.text;
-    state.lessonScrollArea.appendChild(lessonContent);
-}
-
-function renderTextBlock(block) {
-    const lessonContent = document.createElement("p");
-    lessonContent.textContent = block.content;
-    state.lessonScrollArea.appendChild(lessonContent);
-}
-
-function renderImageBlock(block) {
-    const lessonContent = document.createElement("div");
-    lessonContent.className = "image-block-div";
-    const img = document.createElement("img");
-    lessonContent.appendChild(img);
-    img.src = block.src;
-    img.alt = block.alt;
-    if (block.caption) {
-        const caption = document.createElement("p");
-        caption.textContent = block.caption;
-        lessonContent.appendChild(caption);
-    }
-    state.lessonScrollArea.appendChild(lessonContent);
-}
-
-function renderMultipleChoiceBlock(block) {
-    const lessonContent = document.createElement("div");
-    block.options.forEach(option => {
-        const button = document.createElement("button");
-        button.textContent = option.text;
-        button.onclick = () => {
-            if (block.allowMultiple) {
-                button.classList.toggle("b-option-selected");
-                if (!Array.isArray(state.activeBlockAnswers[block.id])) state.activeBlockAnswers[block.id] = [];
-                if (state.activeBlockAnswers[block.id].includes(option.id)) {
-                    state.activeBlockAnswers[block.id] = state.activeBlockAnswers[block.id].filter(id => id !== option.id);
-                } else {
-                    state.activeBlockAnswers[block.id].push(option.id);
-                }
-            } else {
-                state.activeBlockAnswers[block.id] = option.id;
-                lessonContent.querySelectorAll("button").forEach(b => b.classList.remove("b-option-selected"));
-                button.classList.add("b-option-selected");
-            }
-        };
-        lessonContent.appendChild(button);
-    });
-    state.lessonScrollArea.appendChild(lessonContent);
-}
-
-function renderImageLabelBlock(block) {
-    const lessonContent = document.createElement("div");
-    const img = document.createElement("img");
-    lessonContent.appendChild(img);
-    lessonContent.className = "image-label-div";
-    img.src = block.src;
-    img.alt = block.alt;
-    block.points.forEach(point => {
-        const pWrapper = document.createElement("div");
-        const marker = document.createElement("select");
-        marker.className = "image-label-select";
-        const blank = document.createElement("option");
-        blank.textContent = "";
-        marker.appendChild(blank);
-        const dot = document.createElement("button");
-        dot.className = "image-label-dot";
-        dot.onclick = () => { pWrapper.classList.add("expanded"); };
-        point.options.forEach(option => {
-            const optionPt = document.createElement("option");
-            optionPt.value = option.id
-            optionPt.textContent = option.text;
-            marker.appendChild(optionPt);
-        });
-        pWrapper.style.left = point.x + "%"
-        pWrapper.style.top = point.y + "%"
-        pWrapper.className = "image-label-pt"
-        marker.onchange = () => {
-            state.activeBlockAnswers[block.id] = state.activeBlockAnswers[block.id] || {};
-            state.activeBlockAnswers[block.id][point.id] = marker.value;
-        };
-        pWrapper.appendChild(dot);
-        pWrapper.appendChild(marker);
-        lessonContent.appendChild(pWrapper);
-    });
-    const colBtn = document.createElement("button");
-    colBtn.className = "image-label-collapse-btn";
-    colBtn.textContent = "Reset Selections"
-    colBtn.onclick = () => {
-        lessonContent.querySelectorAll(".image-label-pt").forEach(pt => pt.classList.remove("expanded"));
-        lessonContent.querySelectorAll(".image-label-select").forEach(sel => sel.value = "");
-        if (state.activeBlockAnswers[block.id]) state.activeBlockAnswers[block.id] = {};
-    }
-    lessonContent.appendChild(colBtn);
-    state.lessonScrollArea.appendChild(lessonContent);
-}
-
-function renderSubmitBlock(block) {
-    const isLastStep = state.activeStepIndex === state.activeSteps.length - 1;
-    const lessonContent = document.createElement("button");
-    lessonContent.textContent = "Submit"
-    lessonContent.className = "lesson-bar-action-btn";
-    state.lessonBar.appendChild(lessonContent);
-    let stage = "submit";
-    let finalScore = { correct: 0, total: 0 };
-    lessonContent.onclick = async () => {
-        if (stage === "complete") {
-            if (isLastStep) {
-                showLessonEndScreen(finalScore, lessonContent);
-            } else {
-                renderStep(state.activeStepIndex + 1);
-            }
-            return;
-        }
-        const unanswered = block.targets.some(id => {
-            const targetBlock = findBlockById(id);
-            if (targetBlock.type === "multipleChoice" && !targetBlock.allowMultiple) {
-                return state.activeBlockAnswers[id] === undefined;
-            } else if (targetBlock.type === "multipleChoice" && targetBlock.allowMultiple) {
-                return !state.activeBlockAnswers[id] || state.activeBlockAnswers[id].length === 0
-            } else if (targetBlock.type === "imageLabel") {
-                return targetBlock.points.some(point => state.activeBlockAnswers[id]?.[point.id] === undefined)
-            }
-        });
-        if (unanswered) {
-            const uaFeedback = document.createElement("p");
-            uaFeedback.textContent = "Please answer all questions before submitting."
-            uaFeedback.className = "block-feedback";
-            state.lessonScrollArea.appendChild(uaFeedback);
-            return;
-        }
-        state.lessonScrollArea.querySelectorAll(".block-feedback").forEach(el => el.remove());
-        state.lessonScrollArea.scrollTo({ top:0, behavior: "smooth"});
-        if (block.targets.length === 0) {
-            const firstTime = !state.ud.scores[state.activeLessonData.id];
-            state.ud.scores[state.activeLessonData.id] = 1
-            finalScore = { correct: 1, total: 1 };
-            await saveField("scores", state.ud.scores)
-            if (firstTime) await markPacedCompletion();
-            state.stepResults[state.activeStepIndex] = { allCorrect: true, correct:1, total:1};
-            renderStepSquares();
-        } else {
-            let correctCount = 0;
-            let allCorrect = true;
-            block.targets.forEach(targetId => {
-                let isCorrect;
-                let feedbackText;
-                const targetBlock = findBlockById(targetId);
-                if (targetBlock.type === "multipleChoice") {
-                    if (!targetBlock.allowMultiple) {
-                        const correct = targetBlock.options.find(o => o.correct);
-                        isCorrect = correct.id === state.activeBlockAnswers[targetBlock.id];
-                        const selectedOption = targetBlock.options.find(o => o.id === state.activeBlockAnswers[targetBlock.id])
-                        if (selectedOption.feedback) feedbackText = selectedOption.feedback
-                        else feedbackText = isCorrect ? targetBlock.correctFeedback : targetBlock.incorrectFeedback;
-                        if (!isCorrect) allCorrect = false;
-                        if (isCorrect) correctCount++;
-                    } else {
-                        const correctIds = targetBlock.options.filter(o => o.correct).map(o => o.id);
-                        const selected = state.activeBlockAnswers[targetBlock.id] || [];
-                        isCorrect = selected.length === correctIds.length && selected.every(id => correctIds.includes(id));
-                        feedbackText = isCorrect ? targetBlock.correctFeedback : targetBlock.incorrectFeedback;
-                        if (!isCorrect) allCorrect = false;
-                        if (isCorrect) correctCount++;
-                    }
-                } else if (targetBlock.type === "imageLabel") {
-                    isCorrect = targetBlock.points.every(point => {
-                        const correct = point.options.find(o => o.correct);
-                        return correct.id === state.activeBlockAnswers[targetBlock.id]?.[point.id];
-                    });
-                    feedbackText = isCorrect ? targetBlock.correctFeedback : targetBlock.incorrectFeedback;
-                    if (!isCorrect) allCorrect = false;
-                    if (isCorrect) correctCount++;
-                }
-                const feedback = document.createElement("p");
-                feedback.className = "block-feedback";
-                feedback.textContent = feedbackText;
-                state.lessonScrollArea.appendChild(feedback);
-            });
-            state.stepResults[state.activeStepIndex] = { allCorrect, correct:correctCount, total: block.targets.length};
-            renderStepSquares();
-            finalScore = { correct: correctCount, total: block.targets.length };
-        }
-        if (isLastStep && state.activeLessonData.steps) {
-            finalScore = {
-                correct: state.stepResults.filter(r => r?.allCorrect).length,
-                total:state.activeSteps.length
-            };
-        }
-        if (isLastStep && block.targets.length > 0) await saveLessonResult(finalScore);
-        stage = "complete";
-        lessonContent.textContent = isLastStep ? "Complete" : "Next";
-    }
-}
-
-function findBlockById(id) {
-    const block = state.activeSteps[state.activeStepIndex].blocks.find(b => b.id === id);
-    return block;
-}
-
-function showLessonEndScreen(finalScore, actionBtn) {
+export function showLessonEndScreen(finalScore, actionBtn) {
     state.lessonComplete = true;
     state.lessonScrollArea.innerHTML = `<div class="view-loading-state">loading...</div>`;
     const nature = pickRNatureImage();
@@ -1921,15 +1627,6 @@ document.querySelectorAll(".diff-btn").forEach(btn => {
         state.activeDifficulty = btn.dataset.diff;
         renderExplorer();
     });
-});
-
-document.addEventListener("keydown", e => {
-    if (e.target?.classList.contains("challenge-editor") && e.key === "Tab") {
-        e.preventDefault();
-        const el = e.target, s = el.selectionStart;
-        el.value = el.value.substring(0, s) + "    " + el.value.substring(el.selectionEnd);
-        el.selectionStart = el.selectionEnd = s + 4;
-    }
 });
 
 (function initPublicCatalog() {
