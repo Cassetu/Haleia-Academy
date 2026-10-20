@@ -3,7 +3,8 @@ import { state } from "./state.js";
 import { pickRNatureImage, showConfirmDialog, showError } from "./ui.js";
 import { saveField } from "./userData.js";
 import { renderBlocks } from "./blocks.js";
-import { switchView, openSyllabus, getCoursePacedState } from "./course.js";
+import { switchView} from "./course.js";
+import {openSyllabus, getCoursePacedState } from "./syllabus.js";
 
 export async function saveLessonResult(finalScore) {
     if (!state.activeLessonData.path) { await saveQuizResult(finalScore); return; }

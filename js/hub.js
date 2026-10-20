@@ -4,7 +4,7 @@ import { showError } from "./ui.js";
 import { saveField } from "./userData.js";
 import { shuffleArray } from "./utils/parse.js";
 import { startLesson } from "./lesson.js";
-import { loadIndex } from "./course.js";
+import { loadIndex } from "./catalog.js";
 
 export async function generateModuleExam(courseId, data) {
     const allQ = await collectQuestions(data, getDefaultPracticeSettings());
