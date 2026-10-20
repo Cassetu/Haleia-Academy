@@ -4,7 +4,7 @@ import { showError, showConfirmDialog} from "./ui.js";
 import { saveField} from "./userData.js";
 import {isBinaryLesson} from "./constants.js";
 import {openCurriculumHome} from "./syllabus.js";
-import {switchView, updateActiveCountBadge,applyExplorerSearch} from "./course.js";
+import { switchView, updateActiveCountBadge } from "./course.js";
 
 export async function loadCatalog() {
     if (state.catalogData.length) return;
