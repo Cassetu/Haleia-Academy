@@ -370,51 +370,6 @@ export function switchView(id, title) {
     document.body.classList.remove("lesson-active");
 }
 
-function getLessonPaths(data) {
-    const paths = [];
-    data.courses.forEach(course => {
-        course.sections.forEach(sec => sec.lessons.forEach(l => {
-            paths.push(l.path);
-        }));
-    });
-    return paths;
-}
-async function unenrollFromCourse(entry) {
-    showConfirmDialog(`Disenroll from ${entry.title}? Scores are preserved.`, async () => {
-        state.ud.enrolled = state.ud.enrolled.filter(id => id !== entry.id);
-        await saveField("enrolled", state.ud.enrolled);
-        updateActiveCountBadge();
-        await renderExplorer();
-    });
-}
-
-export function applyExplorerSearch() {
-    const q = (searchBar?.value || "").trim().toLowerCase();
-    document.querySelectorAll(".course-card").forEach(card => {
-        card.style.display = (!q || card.dataset.search.includes(q)) ? "flex" : "none";
-    });
-}
-
-searchBar?.addEventListener("input", applyExplorerSearch);
-
-document.querySelectorAll(".filter-btn[data-filter]").forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".filter-btn[data-filter]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        state.activeCategory = btn.dataset.filter;
-        renderExplorer();
-    });
-});
-
-document.querySelectorAll(".diff-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".diff-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        state.activeDifficulty = btn.dataset.diff;
-        renderExplorer();
-    });
-});
-
 (function initPublicCatalog() {
     const btnCourses  = $("btn-landing-courses");
     const btnBack     = $("btn-back-landing");
