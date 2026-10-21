@@ -3,6 +3,7 @@ import {state} from "./state.js";
 import {loadCatalog} from "./catalog.js";
 import {openCurriculumHome,openSyllabus} from "./syllabus.js";
 import {openHub} from "./hub.js";
+import {loadStats,landingAudienceTabs} from "./landing.js";
 
 window.addEventListener("popstate", routeFromURL);
 document.addEventListener("click", e => {
@@ -41,6 +42,8 @@ export async function routeFromURL() {
         } else {
             showTopView("view-landing");
             document.getElementById("view-landing").style.display = "flex";
+            loadStats();
+            landingAudienceTabs();
         }
         return;
     }

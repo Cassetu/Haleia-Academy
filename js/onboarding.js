@@ -2,7 +2,7 @@ import { activeDropdown, userDropdown } from "./dom.js";
 import { state } from "./state.js";
 import { saveField } from "./userData.js";
 import { createDialogueBox } from "./utils/dialogueBox.js";
-import { closeAllDropdowns, populateActiveDropdown } from "./course.js";
+import { closeAllDropdowns, populateActiveDropdown } from "./nav.js";
 
 export function startOnboarding() {
     if (document.getElementById("onboardingOverlay")) {

@@ -71,7 +71,7 @@ export function landingAudienceTabs() {
         renderPublicGrid();
     }
 
-    if (btnCourses) btnCourses.addEventListener("click", openPublic);
+    document.querySelectorAll(".landing-explore-trigger").forEach(b => b.addEventListener("click", openPublic));
 
     if (btnBack) {
         btnBack.addEventListener("click", (e) => {
