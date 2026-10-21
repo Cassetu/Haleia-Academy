@@ -8,7 +8,8 @@ import { isBinaryLesson} from "./constants.js";
 import { startLesson, resetTopBarLayout } from "./lesson.js";
 import { generateModuleExam, collectQuestions, buildQuizSteps, compileMasterTest } from "./hub.js";
 import { loadIndex, show404, getCourseProgress, showCourseDescription } from "./catalog.js";
-import {switchView, setActiveNavBtn} from "./course.js";
+import {setActiveNavBtn} from "./course.js";
+import {switchView} from "./router.js";
 
 function findProjectLesson(data) {
     for (const course of data.courses) {
