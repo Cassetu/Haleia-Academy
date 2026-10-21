@@ -1,4 +1,4 @@
-import {$, viewExplorer, catalogGrid, searchBar } from "./dom.js";
+import {viewExplorer, catalogGrid, searchBar } from "./dom.js";
 import { state} from "./state.js";
 import { showError, showConfirmDialog} from "./ui.js";
 import { saveField} from "./userData.js";

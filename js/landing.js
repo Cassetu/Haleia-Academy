@@ -45,7 +45,6 @@ export function landingAudienceTabs() {
     });
 }
 (function initPublicCatalog() {
-    const btnCourses  = $("btn-landing-courses");
     const btnBack     = $("btn-back-landing");
     const viewLanding = $("view-landing");
     const viewPublic  = $("view-public-courses");

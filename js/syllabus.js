@@ -1,4 +1,4 @@
-import { $, viewSyllabus } from "./dom.js";
+import { viewSyllabus } from "./dom.js";
 import { state } from "./state.js";
 import { saveField } from "./userData.js";
 import { shuffleArray } from "./utils/parse.js";

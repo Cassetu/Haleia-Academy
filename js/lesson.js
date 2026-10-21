@@ -76,10 +76,8 @@ export async function startLesson(lesson, section) {
     }
 
     const topNavBtn = $("nav-explorer");
-    let originalText = "Explore";
 
     if (topNavBtn) {
-        originalText = topNavBtn.innerText;
         topNavBtn.innerText = "← Return";
         topNavBtn.classList.add("tb-btn-return");
         if (window.activeTopbarGate) topNavBtn.removeEventListener("click", window.activeTopbarGate, true);
