@@ -1771,3 +1771,5 @@ button:disabled {
 .step-square.current { border-color: var(--accent);}
 .step-square.right { background:var(--accent);}
 .step-square.wrong { background: #ccc;}
+.green-div {background:#D1E7DD;border-radius:15px;padding:15px;margin:5px 10px;}
+.red-div {background:#F8D7DA;border-radius:15px;padding:15px;margin:5px 10px;}
