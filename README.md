@@ -1,6 +1,6 @@
 
 
-<h1 align="center"><img src="assets/img/brand/favicon.png" alt="favicon" width="34"> NOVARA - Learning with you in mind :) </h1>
+<h1 align="center"><img src="assets/img/brand/favicon.png" alt="favicon" width="34"> Haleia Academy - Learning with you in mind :) </h1>
 
 #### A free learning website with curriculums and courses on a wide variety of subjects.
 [![Work time](https://hackatime.hackclub.com/api/v1/badge/U0B7KLS4R9R/Cassetu/Novara?color=77BBA2)](https://hackatime-badge.hackclub.com)
@@ -22,7 +22,7 @@
 
 ## Website Usage
 
-Simply go to [cassetu.github.io/Novara](https://cassetu.github.io/Novara) and start learning! Users will be asked to sign in with Google or use email verification to create an account. This is to allow users to save their progress and access it across devices. We do not use this information for any other purpose, Read the privacy policy or email me if you are worried.
+Simply go to [cassetu.github.io/Haleia-Academy](https://cassetu.github.io/Haleia-Academy) and start learning! Users will be asked to sign in with Google or use email verification to create an account. This is to allow users to save their progress and access it across devices. We do not use this information for any other purpose, Read the privacy policy or email me if you are worried.
 
 ![sign-in.png](assets/readme/sign-in.png)
 
@@ -31,11 +31,11 @@ Learning takes the form in curriculums that the user can enroll in. Each user is
 ![Example Image](assets/readme/course.png)
 ![Example Image](assets/readme/document.png)
  
-View journal/changelog page: [cassetu.github.io/Novara/html/journal.html](https://cassetu.github.io/Novara/html/journal.html)
+View journal/changelog page: [https://novaraedu.org/html/journal.html](https://novaraedu.org/html/journal.html)
 
-Visit About page: [cassetu.github.io/Novara/html/about.html](https://cassetu.github.io/Novara/html/about.html)
+Visit About page: [https://novaraedu.org/html/about.html](https://novaraedu.org/html/about.html)
 
-Privacy Policy: [cassetu.github.io/Novara/html/privacy.html](https://cassetu.github.io/Novara/html/privacy.html)
+Privacy Policy: [https://novaraedu.org/html/privacy.html](https://novaraedu.org/html/privacy.html)
 
 ## Features
 *   **Focused Learning:** Enrollment is limited to a maximum of 3 curriculums at a time to encourage focus and prevent overwhelm. (subject to change)
@@ -52,7 +52,7 @@ Privacy Policy: [cassetu.github.io/Novara/html/privacy.html](https://cassetu.git
 *   **AI Content Generation:** Claude.ai (for course content generation, getting removed :D )
 
 ## Reporting Issues & Support
-Create an issue on our [GitHub repository](https://github.com/Cassetu/Novara/issues) or email us at **cassetunium@gmail.com** (Responses take 3-5 business days). Please include:
+Create an issue on our [GitHub repository](https://github.com/Cassetu/haleia-academy/issues) or email us at **cassetunium@gmail.com** (Responses take 3-5 business days). Please include:
 *   A detailed description of the issue.
 *   Clear steps to reproduce the bug.
 *   Relevant screenshots or console error messages.
@@ -65,7 +65,7 @@ To maintain quality, the AI is guided by strict instructions designed to reduce 
 
 Despite these safeguards, mistakes and errors may still occur. If you find an issue, please report it to me by emailing: **cassetunium@gmail.com** (Responses take 3-5 business days).
 
-Thank you for helping Novara improve.
+Thank you for helping Haleia Academy improve.
 
 ## Contributing
 We currently aren't accepting contributions, but I appreciate your interest! If you have suggestions or feedback, please reach out to me at **cassetunium@gmail.com**

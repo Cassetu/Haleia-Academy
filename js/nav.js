@@ -128,8 +128,8 @@ navSignout?.addEventListener("click", e => {
     e.stopPropagation();
     closeAllDropdowns();
     const msg = state.currentUser
-        ? "Sign out and leave Novara?"
-        : "Leave Novara? Guest Progress won't be saved.";
+        ? "Sign out and leave Haleia Academy?"
+        : "Leave Haleia Academy? Guest Progress won't be saved.";
     showConfirmDialog(msg, () => {
         history.pushState({},"",window.location.pathname);
         if (state.currentUser) window.firebaseAuth.signOut();

@@ -65,7 +65,7 @@ export async function routeFromURL() {
 }
 
 export function switchView(id, title) {
-    document.title = title ? title + " - Novara" : "Novara";
+    document.title = title ? title + " - Haleia Academy" : "Haleia Academy";
     [viewExplorer, viewSyllabus, viewLesson, viewSettings, viewHub]
         .forEach(v => v.style.display = "none");
     $(id).style.display = "block";

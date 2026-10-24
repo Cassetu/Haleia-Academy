@@ -1,4 +1,4 @@
-const CACHE = "novara-v3";
+const CACHE = "Haleia Academy-v3";
 
 
 const SKIP_CACHE = [

@@ -5,13 +5,13 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gst
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCNtYbNMR8eK7jb6UjZWWWqx3vxkSA0sfw",
-  authDomain: "novara-1.firebaseapp.com",
-  projectId: "novara-1",
-  storageBucket: "novara-1.firebasestorage.app",
-  messagingSenderId: "1044016221037",
-  appId: "1:1044016221037:web:c5b58e5eb427007bd86864",
-  measurementId: "G-HML9QRXSC3"
+  apiKey: "AIzaSyAmNifQcNjNo4IvmTiifk90Hci7nVXqn7Y",
+  authDomain: "haleia-academy.firebaseapp.com",
+  projectId: "haleia-academy",
+  storageBucket: "haleia-academy.firebasestorage.app",
+  messagingSenderId: "542546212817",
+  appId: "1:542546212817:web:bff096136eb7bfac9092f0",
+  measurementId: "G-Z4J34LN3SR"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -19,7 +19,7 @@ const analytics = getAnalytics(app);
 self.FIREBASE_APPCHECK_DEBUG_TOKEN = location.hostname === "localhost";
 //TODO: BE CAREFUL WITH DEBUG TOKEN!!!
 const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaEnterpriseProvider("6LdvSsYtAAAAAEGwZp95ajStW3YMPzQiBL9UI9g1"),
+  provider: new ReCaptchaEnterpriseProvider("6LcIOf8tAAAAACKbbQpbWUfqrXv6inC8f3qciNR3"),
   isTokenAutoRefreshEnabled: true
 });
 const auth = getAuth(app);

@@ -1,21 +1,21 @@
 {
-  "name": "novara",
+  "name": "Haleia Academy",
   "version": "1.0.0",
-  "description": "<h1 align=\"center\"><img src=\"assets/img/brand/favicon.png\" alt=\"favicon\" width=\"34\"> NOVARA - Learning with you in mind :) </h1>",
+  "description": "<h1 align=\"center\"><img src=\"assets/img/brand/favicon.png\" alt=\"favicon\" width=\"34\"> Haleia Academy - Learning with you in mind :) </h1>",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Cassetu/Novara.git"
+    "url": "git+https://github.com/Cassetu/haleia-academy.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/Cassetu/Novara/issues"
+    "url": "https://github.com/Cassetu/haleia-academy/issues"
   },
-  "homepage": "https://github.com/Cassetu/Novara#readme"
+  "homepage": "https://github.com/Cassetu/haleia-academy#readme"
 }

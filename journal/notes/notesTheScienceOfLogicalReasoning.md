@@ -1,4 +1,4 @@
-<h1><img src="../../assets/img/brand/favicon.png" alt="favicon" width="34"> NOVARA NOTES - The Science of Logical Reasoning</h1>
+<h1><img src="../../assets/img/brand/favicon.png" alt="favicon" width="34"> HALEIA ACADEMY NOTES - The Science of Logical Reasoning</h1>
 
 **Written Entirely by Human Hands**, Watch the Timelapses:
 * 1.0 (Recording system failed sorry guys)

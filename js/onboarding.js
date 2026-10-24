@@ -14,7 +14,7 @@ export function startOnboarding() {
     document.body.appendChild(onboardingOverlay);
 
     const steps = [
-        { selector: ".course-card", text: "Welcome to Novara. I'm Bob. Each card here is a full curriculum with lessons, challenges, and simulations." },
+        { selector: ".course-card", text: "Welcome to Haleia Academy. I'm Bob. Each card here is a full curriculum with lessons, challenges, and simulations." },
         { selector: ".b-enroll-btn", text: "When you're ready, click 'Enroll' on a card to put it into your active selection.", interaction: true },
         { selector: "#user-avatar-btn", text: "If you want extra practice, open your profile menu to hit the Hub for survival drills and docs.", openMenu: true, blockClick: true },
         { selector: "#nav-active-btn", text: "Your active curriculums stay right up here in this menu so you can drop back in anytime.", openActive: true, blockClick: true }

@@ -17,7 +17,7 @@ catalogData.forEach(entry => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>${entry.title} - Novara</title>
+            <title>${entry.title} - Haleia Academy</title>
             <meta name="description" content="${entry.description}">
             <meta property="og:title" content="${entry.title}">
             <meta property="og:description" content="${entry.description}">

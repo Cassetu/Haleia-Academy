@@ -121,7 +121,7 @@ export function landingAudienceTabs() {
             "description": entry.description,
             "provider": {
                 "@type": "Organization",
-                "name": "Novara",
+                "name": "Haleia Academy",
                 "sameAs": "https://novaraedu.org"
             }
         }))
