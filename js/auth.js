@@ -7,7 +7,7 @@ import {routeFromURL} from "./router.js";
 window.firebaseAuth.onAuthStateChanged(async user => {
     if (user) {
         state.currentUser = user;
-        await loadUserData
+        await loadUserData();
         const initial = (user.displayName || user.email || "N")[0].toUpperCase();
         if (userAvatarBtn) userAvatarBtn.textContent = initial;
         if (navSignin) navSignin.style.display = "none";

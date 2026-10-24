@@ -227,8 +227,8 @@ export async function renderExplorer() {
 }
 
 async function enrollInCourse(entry) {
-    if (state.ud.enrolled.length >= 3) {
-        showError("You can only be enrolled in 3 curriculums at once. Please unenroll from an active curriculum to enroll in a new one.");
+    if (state.ud.enrolled.length >= 4) {
+        showError("You can only be enrolled in 4 curriculums at once. Please unenroll from an active curriculum to enroll in a new one.");
         return;
     }
     state.ud.enrolled.push(entry.id);
