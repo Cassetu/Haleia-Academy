@@ -1,0 +1,29 @@
+{
+  "id": "2nd-grade-math",
+  "title": "2nd Grade Math",
+  "courses": [
+    {
+      "id": "add-subtract-20",
+      "title": "Add and Subtract 20",
+      "sections": [
+        {
+          "title": "Add within 20",
+          "lessons": [
+            {
+              "id": "add-within-20-overview",
+              "title": "Add within 20 overview",
+              "type": "document",
+              "path": "data/2nd-grade-math/add-subtract-20/overview.json"
+            },
+            {
+              "id": "add-within-20-visual",
+              "title": "Add within 20 visually",
+              "type": "mcq",
+              "path": "data/2nd-grade-math/add-subtract-20/add-within-20-visual.json"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

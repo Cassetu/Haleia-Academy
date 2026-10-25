@@ -22,5 +22,17 @@
     "difficulty": "beginner",
     "description": "The Science of Logical Reasoning",
     "indexFile": "data/logic/index.json"
+  },
+  {
+    "id": "2nd-grade-math",
+    "title": "2nd Grade Math",
+    "author": ["Cassetu"],
+    "published": "10-25-2026",
+    "updated": "10-25-2026",
+    "sources": [""],
+    "category": "other",
+    "difficulty": "beginner",
+    "description": "2nd Grade Math",
+    "indexFile": "data/2nd-grade-math/index.json"
   }
 ]
