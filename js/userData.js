@@ -1,4 +1,5 @@
 import { state } from "./state.js";
+import { saveGuestProgress} from "./guest.js";
 
 export function currentWeekId() {
     const d = new Date();
@@ -7,7 +8,7 @@ export function currentWeekId() {
 }
 
 async function recordWeeklyActivity() {
-    if (!state.currentUser) return;
+    if (!state.currentUser) { saveGuestProgress(); return;}
     const week = currentWeekId();
     if (state.ud.lastActiveWeek === week) return;
     state.ud.lastActiveWeek = week;

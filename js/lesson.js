@@ -4,7 +4,8 @@ import { pickRNatureImage, showConfirmDialog, showError } from "./ui.js";
 import { saveField } from "./userData.js";
 import { renderBlocks } from "./blocks.js";
 import {openSyllabus, getCoursePacedState } from "./syllabus.js";
-import {switchView} from "./router.js";
+import {switchView, routeFromURL} from "./router.js";
+import {remReturnTo} from "./guest.js";
 
 export async function saveLessonResult(finalScore) {
     if (!state.activeLessonData.path) { await saveQuizResult(finalScore); return; }
@@ -218,7 +219,21 @@ function renderEndScreenContent(finalScore, nature, actionBtn) {
         <span class="lesson-end-credit">${nature.credit}</span>
     `
     state.lessonScrollArea.appendChild(wrapper);
-
+    if (!state.currentUser) {
+        const prompt = document.createElement("div");
+        prompt.className = "lesson-end-signin"
+        prompt.innerHTML = `<p>You're not signed in, so this progress only lives in this browser.</p>`;
+        const btn = document.createElement("button");
+        btn.textContent = "Sign in to save (current progress will be carried over)";
+        btn.onclick = () => {
+            const id = state.activeCurriculumEntry?.id;
+            remReturnTo(id ? `?view=curriculum-home&id=${id}` : "?view=explorer");
+            history.pushState({}, "", "?view=signin");
+            routeFromURL();
+        };
+        prompt.appendChild(btn);
+        wrapper.appendChild(prompt);
+    }
     if (!state.activeLessonData.path) {
         actionBtn.textContent = "Done";
         actionBtn.onclick = () => {

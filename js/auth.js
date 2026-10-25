@@ -3,11 +3,15 @@ import {state} from "./state.js";
 import {loadUserData,makeBlankUd} from "./userData.js";
 import {loadCatalog} from "./catalog.js";
 import {routeFromURL} from "./router.js";
+import {restoreGuestProgress, mergeGuestProgress, takeReturnTo} from "./guest.js";
 
 window.firebaseAuth.onAuthStateChanged(async user => {
     if (user) {
         state.currentUser = user;
         await loadUserData();
+        await mergeGuestProgress();
+        const returnTo = takeReturnTo();
+        if (returnTo) history.replaceState({}, "", returnTo);
         const initial = (user.displayName || user.email || "N")[0].toUpperCase();
         if (userAvatarBtn) userAvatarBtn.textContent = initial;
         if (navSignin) navSignin.style.display = "none";
@@ -15,6 +19,7 @@ window.firebaseAuth.onAuthStateChanged(async user => {
         state.currentUser = null;
         state.ud = makeBlankUd();
         state.ud.onboarded = true;
+        restoreGuestProgress();
         if (userAvatarBtn) userAvatarBtn.textContent = "G"
         if (navSignin) navSignin.style.display = "";
     }
