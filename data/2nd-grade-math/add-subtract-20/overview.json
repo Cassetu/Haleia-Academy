@@ -3,10 +3,18 @@
   "icon": "assets/icon/book.svg",
   "blocks": [
     { "type": "heading", "level": 1, "text": "How can we use place value blocks to help add and subtract?"},
-    { "type": "text", "content": "Example Paragraph Goes Here" },
-    { "type": "image", "src": "assets/img/other/brutalist-img.png", "alt": "Description", "caption": "Caption" },
-    { "type": "heading", "level": 3, "text": "Level 3 Title"},
-    { "type": "text", "content": "Example Paragraph Goes Here" },
+    { "type": "text", "content": "We can use place value blocks to represent each number we want to add, and then combine them to find the total." },
+    { "type": "text", "content": "For example, if we want to add 12 + 6, we can start by drawing 12 blocks and then make a second group of place value blocks that has 6 blocks. After we put them together, we will see there are 18 blocks." },
+    { "type": "image", "src": "assets/documents/92bb9331-05a8-4e9f-a12c-e4aea35b4222.svg", "alt": "Description" },
+    { "type": "text", "content": "For subtraction, we can use the blocks to represent the larger number, and then take away the appropriate number of blocks to find the difference." },
+    { "type": "text", "content": "For example, to subtract 14 - 8, we can draw a set of blocks that has 14 place value blocks. Then we can take away 8 place value blocks from the 14 blocks. Now, there are 6 blocks lets." },
+    { "type": "image", "src": "assets/documents/06f28b7c-06df-4977-9be4-afab16ca0a53.svg", "alt": "Description" },
+    { "type": "heading", "level": 1, "text": "How can we use ten frames to help add and subtract?"},
+    { "type": "text", "content": "Ten frames can be helpful for adding and subtracting because they allow us to visually see the numbers we're working with. To add using ten frames, we can fill in the frames with the numbers we want to add." },
+    { "type": "text", "content": "For example, if we want to add 8 and 4, we could fill in eight squares on one ten frame and four squares on another ten frame. By combining the two frames, we can see that the sum is 12." },
+    { "type": "image", "src": "assets/documents/6c6c961d-9a6c-4bc9-a4ab-f9535fe999b2.svg", "alt": "Description" },
+    { "type": "text", "content": "To subtract using ten frames, we can fill in the frame with the larger number and then remove squares to represent the smaller number. For example, if we want to subtract 3 from 7, we would fill in seven squares on the ten frame and then remove three squares. This would leave us with four squares filled in, which represents the difference." },
+    { "type": "image", "src": "assets/documents/52439fef-999e-49fb-b88c-a4c36ab378fe.svg", "alt": "Description" },
     { "id": "submit1", "type": "submit", "targets": [] }
   ]
 }
