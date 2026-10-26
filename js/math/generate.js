@@ -1,5 +1,5 @@
 import { makeRng, randInt } from "./rng.js";
-import { parse, evaluate, calc, q, isQ, toNumber, MathError} from ",/expr.js";
+import { parse, evaluate, calc, q, isQ, toNumber, MathError} from "./expr.js";
 
 const MAX_TRIES = 500;
 const val = (spec, vals) => calc(String(spec), vals);
@@ -13,10 +13,10 @@ function drawParam(spec, rng, vals) {
             const v = randInt(rng, lo, hi);
             if (!banned.includes(v)) return q(v);
         }
+        throw new Error("Parameter range excludes every value");
     }
-    throw new Error("Parameter range excludes every value");
     if (spec.dec) {
-        const [lo, hi, places] = spec.dec, scale = 0 ** places;
+        const [lo, hi, places] = spec.dec, scale = 10 ** places;
         return q(randInt(rng, Math.round(lo * scale), Math.round(hi * scale)), scale);
     }
     throw new Error("Unknown parameter type: " + JSON.stringify(spec));

@@ -10,4 +10,4 @@ export function makeRng(seed) {
 }
 
 export const randInt = (rng, lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
-export const newSeed = () => (Math.random() * 429467296) >>> 0;
+export const newSeed = () => (Math.random() * 4294967296) >>> 0;

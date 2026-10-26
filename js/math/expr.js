@@ -78,7 +78,7 @@ const FUNCS = {
 const CONSTS = { pi: Math.PI, e: Math.E };
 const TOKEN = /\s*(?:(\d+\.?\d*|\.\d+)|([A-Za-z_][A-Za-z_0-9]*)|(<=|>=|==|!=|&&|\|\||[-+*\/^(),<>]))/y;
 
-function tokenize(srv) {
+function tokenize(src) {
     const out = [];
     TOKEN.lastIndex = 0;
     while (TOKEN.lastIndex < src.length) {
