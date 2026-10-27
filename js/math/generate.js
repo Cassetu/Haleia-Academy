@@ -37,7 +37,7 @@ export function generateInstance(block, seed) {
     }
     throw new Error(`Could not satisfy constraints for block "${block.id}"`);
 }
-function fmt(v) {
+export function fmt(v) {
     if (!isQ(v)) return String(Number(v.toFixed(6)));
     if (v.d === 1) return String(v.n);
     return `${v.n < 0 ? "-" : ""}\\frac{${Math.abs(v.n)}}{${v.d}}`;
